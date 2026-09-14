@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+  title: Registry schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ModelRegistration:
+      type: object
+      required: [id, name, modelFamily, ownerId]
+      properties:
+        id:
+          type: string
+          pattern: '^mdl_[0-9A-HJKMNP-TV-Z]{26}$'
+        name:
+          type: string
+        modelFamily:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/ModelFamily
+        ownerId:
+          type: string
+        candidateIds:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        dataDependencyIds:
+          type: array
+          items:
+            type: string
+        conductGateReviewId:
+          type: string
+        touchpoints:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+        inOwnRiskAndSolvencyScope:
+          type: boolean
+        registeredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ModelRegistrationCreate:
+      type: object
+      required: [name, modelFamily, ownerId]
+      properties:
+        name:
+          type: string
+        modelFamily:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/ModelFamily
+        ownerId:
+          type: string
+        candidateIds:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        dataDependencyIds:
+          type: array
+          items:
+            type: string
+        conductGateReviewId:
+          type: string
+        touchpoints:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+    RegisteredDataDependency:
+      type: object
+      required: [id, dataType, name]
+      properties:
+        id:
+          type: string
+          pattern: '^dep_[0-9A-HJKMNP-TV-Z]{26}$'
+        dataType:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/DataType
+        name:
+          type: string
+        structured:
+          type: boolean
+        permissionBasis:
+          type: string
+          enum: [contractual, consent, legitimate_interest, licensed, public_domain, not_established]
+        onwardTransferTerms:
+          type: string
+        permissionRenewalDate:
+          type: string
+          format: date
+        expectedBookCoverage:
+          type: number
+          format: float
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ModelRegistrationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelRegistration'
+        nextCursor:
+          type: string
+    ModelRegistrationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelRegistration'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ModelRegistrationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelRegistrationListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    RegisteredDataDependencyListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegisteredDataDependency'
+        nextCursor:
+          type: string
+    RegisteredDataDependencyListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RegisteredDataDependencyListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

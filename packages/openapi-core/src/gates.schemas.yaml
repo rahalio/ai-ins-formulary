@@ -1,0 +1,148 @@
+openapi: 3.1.0
+info:
+  title: Gates schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ReviewId:
+      type: string
+      pattern: '^gat_[0-9A-HJKMNP-TV-Z]{26}$'
+    FeatureRiskFinding:
+      type: object
+      required: [feature, riskType]
+      properties:
+        feature:
+          type: string
+          example: residential_postcode_cluster
+        riskType:
+          type: string
+          enum:
+            - proxy_for_protected_characteristic
+            - price_sensitivity_signal
+            - unexplainable_to_policyholder
+            - provenance_unverifiable
+            - not_permitted_in_rating
+        severity:
+          type: string
+          enum: [low, medium, high, blocking]
+        mitigation:
+          type: string
+        raisedBy:
+          type: string
+    FeatureRiskFindingCreate:
+      type: object
+      required: [feature, riskType, severity]
+      properties:
+        feature:
+          type: string
+        riskType:
+          type: string
+          enum:
+            - proxy_for_protected_characteristic
+            - price_sensitivity_signal
+            - unexplainable_to_policyholder
+            - provenance_unverifiable
+            - not_permitted_in_rating
+        severity:
+          type: string
+          enum: [low, medium, high, blocking]
+        mitigation:
+          type: string
+    ConductGateReview:
+      type: object
+      required: [id, candidateId, triggeredBy, outcome]
+      properties:
+        id:
+          $ref: '#/components/schemas/ReviewId'
+        candidateId:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        triggeredBy:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+        proposedFeatures:
+          type: array
+          items:
+            type: string
+        outcome:
+          type: string
+          enum: [open, approved, approved_with_conditions, withheld]
+        officerId:
+          type: string
+        actuarialReviewerId:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        rationale:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureRiskFinding'
+        decidedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConductGateReviewCreate:
+      type: object
+      required: [triggeredBy, proposedFeatures]
+      properties:
+        triggeredBy:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+        proposedFeatures:
+          type: array
+          items:
+            type: string
+        actuarialReviewerId:
+          type: string
+        humanReviewRoute:
+          type: string
+          description: How a policyholder reaches human review of the decision
+    ConductGateDecision:
+      type: object
+      required: [officerId, outcome, rationale]
+      properties:
+        officerId:
+          type: string
+        outcome:
+          type: string
+          enum: [approved, approved_with_conditions, withheld]
+        rationale:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+    ConductGateReviewResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ConductGateReview'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    FeatureRiskFindingResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FeatureRiskFinding'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+  parameters:
+    ReviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ReviewId'

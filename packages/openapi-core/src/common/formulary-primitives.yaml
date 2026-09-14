@@ -1,0 +1,83 @@
+openapi: 3.1.0
+info:
+  title: Formulary shared primitives
+  version: 0.1.0
+  description: Cross-domain enums and value objects for Formulary product APIs.
+paths: {}
+components:
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          example: EUR
+    DataType:
+      type: string
+      description: The y term of the formula
+      enum: [company, public, third_party, customer]
+    ModelFamily:
+      type: string
+      enum:
+        - speech_voice_recognition
+        - sentiment_detection
+        - recommendation_engine
+        - text_analytics_nlp
+        - pattern_anomaly_detection
+        - automatic_decision_management
+        - natural_language_generation
+        - object_detection
+        - biometrics
+    Touchpoint:
+      type: string
+      description: Declared regulated touchpoints that trigger the conduct gate
+      enum:
+        - rating_factor
+        - renewal_price
+        - underwriting_acceptance
+        - claims_decision
+        - fraud_referral
+        - reserving_input
+        - marketing_targeting
+        - none
+    ValueQuadrant:
+      type: string
+      description: Position on the result-type and impact-type axes
+      enum:
+        - operations_efficacy
+        - customer_efficacy
+        - operations_discovery
+        - customer_discovery
+    CandidateId:
+      type: string
+      pattern: '^can_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed use-case candidate id
+    Cursor:
+      type: string
+      description: Opaque keyset cursor
+    Limit:
+      type: integer
+      minimum: 1
+      maximum: 200
+      default: 50
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        $ref: '#/components/schemas/Cursor'
+    Limit:
+      name: limit
+      in: query
+      schema:
+        $ref: '#/components/schemas/Limit'
+    CandidateId:
+      name: candidateId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/CandidateId'

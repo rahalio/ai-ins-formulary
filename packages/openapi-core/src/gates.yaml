@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Formulary Gates API
+  version: 0.1.0
+  description: Conduct and actuarial review, proxy and feature risk findings.
+  x-domain: gate
+  x-product-slug: ai-ins-formulary
+servers:
+  - url: https://api.formulary.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Gates
+    description: Conduct and actuarial review, proxy and feature risk findings
+paths:
+  /v1/candidates/{candidateId}/conduct-gate:
+    parameters:
+      - $ref: ./common/formulary-primitives.yaml#/components/parameters/CandidateId
+    post:
+      operationId: openConductGateReview
+      tags: [Gates]
+      summary: Open conduct gate review
+      x-repository: ConductGateReview
+      x-dynamodb:
+        entityType: "CONDUCT_GATE"
+        pkPatternTemplate: "CANDIDATE#${candidateId}"
+        skPatternTemplate: "GATE#${id}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./gates.schemas.yaml#/components/schemas/ConductGateReviewCreate
+      responses:
+        "201":
+          description: Conduct review opened for the declared touchpoints
+          content:
+            application/json:
+              schema:
+                $ref: ./gates.schemas.yaml#/components/schemas/ConductGateReviewResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/conduct-gate-reviews/{reviewId}/decision:
+    parameters:
+      - $ref: ./gates.schemas.yaml#/components/parameters/ReviewId
+    post:
+      operationId: decideConductGate
+      tags: [Gates]
+      summary: Record conduct gate decision
+      x-repository: ConductGateReview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./gates.schemas.yaml#/components/schemas/ConductGateDecision
+      responses:
+        "200":
+          description: Gate decision recorded and binding on build
+          content:
+            application/json:
+              schema:
+                $ref: ./gates.schemas.yaml#/components/schemas/ConductGateReviewResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        "404":
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/conduct-gate-reviews/{reviewId}/feature-risk-findings:
+    parameters:
+      - $ref: ./gates.schemas.yaml#/components/parameters/ReviewId
+    post:
+      operationId: raiseFeatureRiskFinding
+      tags: [Gates]
+      summary: Raise feature risk finding
+      x-repository: ConductGateReview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./gates.schemas.yaml#/components/schemas/FeatureRiskFindingCreate
+      responses:
+        "201":
+          description: Proxy or prohibited-practice finding raised against a feature
+          content:
+            application/json:
+              schema:
+                $ref: ./gates.schemas.yaml#/components/schemas/FeatureRiskFindingResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

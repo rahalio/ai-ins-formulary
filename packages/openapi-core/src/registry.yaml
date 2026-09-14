@@ -1,0 +1,140 @@
+openapi: 3.1.0
+info:
+  title: Formulary Registry API
+  version: 0.1.0
+  description: Production model and data dependency registration.
+  x-domain: reg
+  x-product-slug: ai-ins-formulary
+servers:
+  - url: https://api.formulary.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Registry
+    description: Production model and data dependency registration
+paths:
+  /v1/registry/models:
+    get:
+      operationId: listModelRegistrations
+      tags: [Registry]
+      summary: List registered production models
+      x-repository: ModelRegistration
+      x-dynamodb:
+        entityType: "MODEL"
+        pkPatternTemplate: "MODEL#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        filterFields: ["modelFamily"]
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Cursor
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Limit
+        - name: modelFamily
+          in: query
+          schema:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/ModelFamily
+        - name: unowned
+          in: query
+          schema:
+            type: boolean
+            description: Filter to production models with no registered owner
+      responses:
+        "200":
+          description: Registered production models with owners and dependencies
+          content:
+            application/json:
+              schema:
+                $ref: ./registry.schemas.yaml#/components/schemas/ModelRegistrationListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: registerModel
+      tags: [Registry]
+      summary: Register a production model
+      x-repository: ModelRegistration
+      x-dynamodb:
+        entityType: "MODEL"
+        pkPatternTemplate: "MODEL#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        filterFields: ["modelFamily"]
+      security:
+        - apiKey: []
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./registry.schemas.yaml#/components/schemas/ModelRegistrationCreate
+      responses:
+        "201":
+          description: Model registered against its use cases and gate outcome
+          content:
+            application/json:
+              schema:
+                $ref: ./registry.schemas.yaml#/components/schemas/ModelRegistrationResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/registry/data-dependencies:
+    get:
+      operationId: listDataDependencies
+      tags: [Registry]
+      summary: List registered data dependencies
+      x-repository: RegisteredDataDependency
+      x-dynamodb:
+        entityType: "DATA_DEPENDENCY"
+        pkPatternTemplate: "DATADEP#$<built-in function id>"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        filterFields: ["dataType"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Cursor
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Limit
+        - name: dataType
+          in: query
+          schema:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/DataType
+        - name: permissionExpiringWithinDays
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dependencies with permission basis and renewal dates
+          content:
+            application/json:
+              schema:
+                $ref: ./registry.schemas.yaml#/components/schemas/RegisteredDataDependencyListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

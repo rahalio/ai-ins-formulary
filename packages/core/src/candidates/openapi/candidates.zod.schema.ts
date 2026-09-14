@@ -1,0 +1,2023 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const submitUseCaseCandidate_Body = z
+  .object({
+    title: z.string(),
+    sponsorId: z.string(),
+    valueChainStep: z
+      .enum([
+        'product_development',
+        'marketing_and_sales',
+        'underwriting_and_risk_rating',
+        'customer_servicing',
+        'claims_management',
+        'financial_assets',
+        'operations',
+      ])
+      .optional(),
+    formula: z
+      .object({
+        functionalitySpec: z
+          .object({
+            functionality: z.enum(['inform', 'recommend', 'decide']),
+            description: z.string(),
+            modelFamilies: z
+              .array(
+                z.enum([
+                  'speech_voice_recognition',
+                  'sentiment_detection',
+                  'recommendation_engine',
+                  'text_analytics_nlp',
+                  'pattern_anomaly_detection',
+                  'automatic_decision_management',
+                  'natural_language_generation',
+                  'object_detection',
+                  'biometrics',
+                ])
+              )
+              .optional(),
+            humanReviewRequired: z.boolean().optional(),
+          })
+          .passthrough(),
+        dataDependencies: z
+          .array(
+            z
+              .object({
+                id: z.string(),
+                dataType: z.enum([
+                  'company',
+                  'public',
+                  'third_party',
+                  'customer',
+                ]),
+                name: z.string(),
+                structured: z.boolean().optional(),
+                permissionBasis: z
+                  .enum([
+                    'contractual',
+                    'consent',
+                    'legitimate_interest',
+                    'licensed',
+                    'public_domain',
+                    'not_established',
+                  ])
+                  .optional(),
+                onwardTransferTerms: z.string().optional(),
+                permissionRenewalDate: z.string().optional(),
+                expectedBookCoverage: z.number().optional(),
+                ownerId: z.string().optional(),
+              })
+              .passthrough()
+          )
+          .min(1),
+        need: z
+          .object({
+            audience: z.enum(['internal_customer', 'external_customer']),
+            needCategory: z.enum([
+              'product',
+              'communication',
+              'operations',
+              'cost',
+              'convenience',
+              'resources',
+            ]),
+            statement: z.string(),
+          })
+          .passthrough(),
+        statement: z.string().optional(),
+      })
+      .passthrough(),
+    touchpoints: z
+      .array(
+        z.enum([
+          'rating_factor',
+          'renewal_price',
+          'underwriting_acceptance',
+          'claims_decision',
+          'fraud_referral',
+          'reserving_input',
+          'marketing_targeting',
+          'none',
+        ])
+      )
+      .optional(),
+    extendsExistingAutomation: z.boolean().optional(),
+    baselineReference: z.string().optional(),
+    analogueCaseIds: z.array(z.string()).optional(),
+  })
+  .passthrough();
+const setValuePosition_Body = z
+  .object({
+    resultType: z.enum(['known', 'unknown']),
+    impactType: z.enum(['bottom_line', 'top_line']),
+    rationale: z.string().optional(),
+  })
+  .passthrough();
+const Cursor = z.string();
+const Limit = z.number();
+const CandidateStage = z.enum([
+  'submitted',
+  'formula_accepted',
+  'readiness_assessment',
+  'conduct_gate',
+  'awaiting_investment',
+  'in_delivery',
+  'live',
+  'benefit_close',
+  'killed',
+  'closed',
+]);
+const ValueQuadrant = z.enum([
+  'operations_efficacy',
+  'customer_efficacy',
+  'operations_discovery',
+  'customer_discovery',
+]);
+const ValueChainStep = z.enum([
+  'product_development',
+  'marketing_and_sales',
+  'underwriting_and_risk_rating',
+  'customer_servicing',
+  'claims_management',
+  'financial_assets',
+  'operations',
+]);
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const CandidateId = z.string();
+const Functionality = z.enum(['inform', 'recommend', 'decide']);
+const ModelFamily = z.enum([
+  'speech_voice_recognition',
+  'sentiment_detection',
+  'recommendation_engine',
+  'text_analytics_nlp',
+  'pattern_anomaly_detection',
+  'automatic_decision_management',
+  'natural_language_generation',
+  'object_detection',
+  'biometrics',
+]);
+const FunctionalitySpec = z
+  .object({
+    functionality: z.enum(['inform', 'recommend', 'decide']),
+    description: z.string(),
+    modelFamilies: z
+      .array(
+        z.enum([
+          'speech_voice_recognition',
+          'sentiment_detection',
+          'recommendation_engine',
+          'text_analytics_nlp',
+          'pattern_anomaly_detection',
+          'automatic_decision_management',
+          'natural_language_generation',
+          'object_detection',
+          'biometrics',
+        ])
+      )
+      .optional(),
+    humanReviewRequired: z.boolean().optional(),
+  })
+  .passthrough();
+const DataType = z.enum(['company', 'public', 'third_party', 'customer']);
+const FormulaDataDependency = z
+  .object({
+    id: z.string(),
+    dataType: z.enum(['company', 'public', 'third_party', 'customer']),
+    name: z.string(),
+    structured: z.boolean().optional(),
+    permissionBasis: z
+      .enum([
+        'contractual',
+        'consent',
+        'legitimate_interest',
+        'licensed',
+        'public_domain',
+        'not_established',
+      ])
+      .optional(),
+    onwardTransferTerms: z.string().optional(),
+    permissionRenewalDate: z.string().optional(),
+    expectedBookCoverage: z.number().optional(),
+    ownerId: z.string().optional(),
+  })
+  .passthrough();
+const NeedStatement = z
+  .object({
+    audience: z.enum(['internal_customer', 'external_customer']),
+    needCategory: z.enum([
+      'product',
+      'communication',
+      'operations',
+      'cost',
+      'convenience',
+      'resources',
+    ]),
+    statement: z.string(),
+  })
+  .passthrough();
+const Formula = z
+  .object({
+    functionalitySpec: z
+      .object({
+        functionality: z.enum(['inform', 'recommend', 'decide']),
+        description: z.string(),
+        modelFamilies: z
+          .array(
+            z.enum([
+              'speech_voice_recognition',
+              'sentiment_detection',
+              'recommendation_engine',
+              'text_analytics_nlp',
+              'pattern_anomaly_detection',
+              'automatic_decision_management',
+              'natural_language_generation',
+              'object_detection',
+              'biometrics',
+            ])
+          )
+          .optional(),
+        humanReviewRequired: z.boolean().optional(),
+      })
+      .passthrough(),
+    dataDependencies: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            dataType: z.enum(['company', 'public', 'third_party', 'customer']),
+            name: z.string(),
+            structured: z.boolean().optional(),
+            permissionBasis: z
+              .enum([
+                'contractual',
+                'consent',
+                'legitimate_interest',
+                'licensed',
+                'public_domain',
+                'not_established',
+              ])
+              .optional(),
+            onwardTransferTerms: z.string().optional(),
+            permissionRenewalDate: z.string().optional(),
+            expectedBookCoverage: z.number().optional(),
+            ownerId: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .min(1),
+    need: z
+      .object({
+        audience: z.enum(['internal_customer', 'external_customer']),
+        needCategory: z.enum([
+          'product',
+          'communication',
+          'operations',
+          'cost',
+          'convenience',
+          'resources',
+        ]),
+        statement: z.string(),
+      })
+      .passthrough(),
+    statement: z.string().optional(),
+  })
+  .passthrough();
+const ValuePosition = z
+  .object({
+    resultType: z.enum(['known', 'unknown']),
+    impactType: z.enum(['bottom_line', 'top_line']),
+    quadrant: z.enum([
+      'operations_efficacy',
+      'customer_efficacy',
+      'operations_discovery',
+      'customer_discovery',
+    ]),
+    rationale: z.string().optional(),
+    assignedBy: z.string().optional(),
+  })
+  .passthrough();
+const Touchpoint = z.enum([
+  'rating_factor',
+  'renewal_price',
+  'underwriting_acceptance',
+  'claims_decision',
+  'fraud_referral',
+  'reserving_input',
+  'marketing_targeting',
+  'none',
+]);
+const UseCaseCandidate = z
+  .object({
+    id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+    title: z.string(),
+    sponsorId: z.string(),
+    valueChainStep: z
+      .enum([
+        'product_development',
+        'marketing_and_sales',
+        'underwriting_and_risk_rating',
+        'customer_servicing',
+        'claims_management',
+        'financial_assets',
+        'operations',
+      ])
+      .optional(),
+    stage: z.enum([
+      'submitted',
+      'formula_accepted',
+      'readiness_assessment',
+      'conduct_gate',
+      'awaiting_investment',
+      'in_delivery',
+      'live',
+      'benefit_close',
+      'killed',
+      'closed',
+    ]),
+    formula: z
+      .object({
+        functionalitySpec: z
+          .object({
+            functionality: z.enum(['inform', 'recommend', 'decide']),
+            description: z.string(),
+            modelFamilies: z
+              .array(
+                z.enum([
+                  'speech_voice_recognition',
+                  'sentiment_detection',
+                  'recommendation_engine',
+                  'text_analytics_nlp',
+                  'pattern_anomaly_detection',
+                  'automatic_decision_management',
+                  'natural_language_generation',
+                  'object_detection',
+                  'biometrics',
+                ])
+              )
+              .optional(),
+            humanReviewRequired: z.boolean().optional(),
+          })
+          .passthrough(),
+        dataDependencies: z
+          .array(
+            z
+              .object({
+                id: z.string(),
+                dataType: z.enum([
+                  'company',
+                  'public',
+                  'third_party',
+                  'customer',
+                ]),
+                name: z.string(),
+                structured: z.boolean().optional(),
+                permissionBasis: z
+                  .enum([
+                    'contractual',
+                    'consent',
+                    'legitimate_interest',
+                    'licensed',
+                    'public_domain',
+                    'not_established',
+                  ])
+                  .optional(),
+                onwardTransferTerms: z.string().optional(),
+                permissionRenewalDate: z.string().optional(),
+                expectedBookCoverage: z.number().optional(),
+                ownerId: z.string().optional(),
+              })
+              .passthrough()
+          )
+          .min(1),
+        need: z
+          .object({
+            audience: z.enum(['internal_customer', 'external_customer']),
+            needCategory: z.enum([
+              'product',
+              'communication',
+              'operations',
+              'cost',
+              'convenience',
+              'resources',
+            ]),
+            statement: z.string(),
+          })
+          .passthrough(),
+        statement: z.string().optional(),
+      })
+      .passthrough(),
+    valuePosition: z
+      .object({
+        resultType: z.enum(['known', 'unknown']),
+        impactType: z.enum(['bottom_line', 'top_line']),
+        quadrant: z.enum([
+          'operations_efficacy',
+          'customer_efficacy',
+          'operations_discovery',
+          'customer_discovery',
+        ]),
+        rationale: z.string().optional(),
+        assignedBy: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+    touchpoints: z
+      .array(
+        z.enum([
+          'rating_factor',
+          'renewal_price',
+          'underwriting_acceptance',
+          'claims_decision',
+          'fraud_referral',
+          'reserving_input',
+          'marketing_targeting',
+          'none',
+        ])
+      )
+      .optional(),
+    extendsExistingAutomation: z.boolean().optional(),
+    baselineReference: z.string().optional(),
+    analogueCaseIds: z.array(z.string()).optional(),
+    submittedAt: z.string().datetime({ offset: true }).optional(),
+    killDecisionDate: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }).optional(),
+    updatedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .passthrough();
+const UseCaseCandidateListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+          title: z.string(),
+          sponsorId: z.string(),
+          valueChainStep: z
+            .enum([
+              'product_development',
+              'marketing_and_sales',
+              'underwriting_and_risk_rating',
+              'customer_servicing',
+              'claims_management',
+              'financial_assets',
+              'operations',
+            ])
+            .optional(),
+          stage: z.enum([
+            'submitted',
+            'formula_accepted',
+            'readiness_assessment',
+            'conduct_gate',
+            'awaiting_investment',
+            'in_delivery',
+            'live',
+            'benefit_close',
+            'killed',
+            'closed',
+          ]),
+          formula: z
+            .object({
+              functionalitySpec: z
+                .object({
+                  functionality: z.enum(['inform', 'recommend', 'decide']),
+                  description: z.string(),
+                  modelFamilies: z
+                    .array(
+                      z.enum([
+                        'speech_voice_recognition',
+                        'sentiment_detection',
+                        'recommendation_engine',
+                        'text_analytics_nlp',
+                        'pattern_anomaly_detection',
+                        'automatic_decision_management',
+                        'natural_language_generation',
+                        'object_detection',
+                        'biometrics',
+                      ])
+                    )
+                    .optional(),
+                  humanReviewRequired: z.boolean().optional(),
+                })
+                .passthrough(),
+              dataDependencies: z
+                .array(
+                  z
+                    .object({
+                      id: z.string(),
+                      dataType: z.enum([
+                        'company',
+                        'public',
+                        'third_party',
+                        'customer',
+                      ]),
+                      name: z.string(),
+                      structured: z.boolean().optional(),
+                      permissionBasis: z
+                        .enum([
+                          'contractual',
+                          'consent',
+                          'legitimate_interest',
+                          'licensed',
+                          'public_domain',
+                          'not_established',
+                        ])
+                        .optional(),
+                      onwardTransferTerms: z.string().optional(),
+                      permissionRenewalDate: z.string().optional(),
+                      expectedBookCoverage: z.number().optional(),
+                      ownerId: z.string().optional(),
+                    })
+                    .passthrough()
+                )
+                .min(1),
+              need: z
+                .object({
+                  audience: z.enum(['internal_customer', 'external_customer']),
+                  needCategory: z.enum([
+                    'product',
+                    'communication',
+                    'operations',
+                    'cost',
+                    'convenience',
+                    'resources',
+                  ]),
+                  statement: z.string(),
+                })
+                .passthrough(),
+              statement: z.string().optional(),
+            })
+            .passthrough(),
+          valuePosition: z
+            .object({
+              resultType: z.enum(['known', 'unknown']),
+              impactType: z.enum(['bottom_line', 'top_line']),
+              quadrant: z.enum([
+                'operations_efficacy',
+                'customer_efficacy',
+                'operations_discovery',
+                'customer_discovery',
+              ]),
+              rationale: z.string().optional(),
+              assignedBy: z.string().optional(),
+            })
+            .passthrough()
+            .optional(),
+          touchpoints: z
+            .array(
+              z.enum([
+                'rating_factor',
+                'renewal_price',
+                'underwriting_acceptance',
+                'claims_decision',
+                'fraud_referral',
+                'reserving_input',
+                'marketing_targeting',
+                'none',
+              ])
+            )
+            .optional(),
+          extendsExistingAutomation: z.boolean().optional(),
+          baselineReference: z.string().optional(),
+          analogueCaseIds: z.array(z.string()).optional(),
+          submittedAt: z.string().datetime({ offset: true }).optional(),
+          killDecisionDate: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }).optional(),
+          updatedAt: z.string().datetime({ offset: true }).optional(),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const UseCaseCandidateListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+              title: z.string(),
+              sponsorId: z.string(),
+              valueChainStep: z
+                .enum([
+                  'product_development',
+                  'marketing_and_sales',
+                  'underwriting_and_risk_rating',
+                  'customer_servicing',
+                  'claims_management',
+                  'financial_assets',
+                  'operations',
+                ])
+                .optional(),
+              stage: z.enum([
+                'submitted',
+                'formula_accepted',
+                'readiness_assessment',
+                'conduct_gate',
+                'awaiting_investment',
+                'in_delivery',
+                'live',
+                'benefit_close',
+                'killed',
+                'closed',
+              ]),
+              formula: z
+                .object({
+                  functionalitySpec: z
+                    .object({
+                      functionality: z.enum(['inform', 'recommend', 'decide']),
+                      description: z.string(),
+                      modelFamilies: z
+                        .array(
+                          z.enum([
+                            'speech_voice_recognition',
+                            'sentiment_detection',
+                            'recommendation_engine',
+                            'text_analytics_nlp',
+                            'pattern_anomaly_detection',
+                            'automatic_decision_management',
+                            'natural_language_generation',
+                            'object_detection',
+                            'biometrics',
+                          ])
+                        )
+                        .optional(),
+                      humanReviewRequired: z.boolean().optional(),
+                    })
+                    .passthrough(),
+                  dataDependencies: z
+                    .array(
+                      z
+                        .object({
+                          id: z.string(),
+                          dataType: z.enum([
+                            'company',
+                            'public',
+                            'third_party',
+                            'customer',
+                          ]),
+                          name: z.string(),
+                          structured: z.boolean().optional(),
+                          permissionBasis: z
+                            .enum([
+                              'contractual',
+                              'consent',
+                              'legitimate_interest',
+                              'licensed',
+                              'public_domain',
+                              'not_established',
+                            ])
+                            .optional(),
+                          onwardTransferTerms: z.string().optional(),
+                          permissionRenewalDate: z.string().optional(),
+                          expectedBookCoverage: z.number().optional(),
+                          ownerId: z.string().optional(),
+                        })
+                        .passthrough()
+                    )
+                    .min(1),
+                  need: z
+                    .object({
+                      audience: z.enum([
+                        'internal_customer',
+                        'external_customer',
+                      ]),
+                      needCategory: z.enum([
+                        'product',
+                        'communication',
+                        'operations',
+                        'cost',
+                        'convenience',
+                        'resources',
+                      ]),
+                      statement: z.string(),
+                    })
+                    .passthrough(),
+                  statement: z.string().optional(),
+                })
+                .passthrough(),
+              valuePosition: z
+                .object({
+                  resultType: z.enum(['known', 'unknown']),
+                  impactType: z.enum(['bottom_line', 'top_line']),
+                  quadrant: z.enum([
+                    'operations_efficacy',
+                    'customer_efficacy',
+                    'operations_discovery',
+                    'customer_discovery',
+                  ]),
+                  rationale: z.string().optional(),
+                  assignedBy: z.string().optional(),
+                })
+                .passthrough()
+                .optional(),
+              touchpoints: z
+                .array(
+                  z.enum([
+                    'rating_factor',
+                    'renewal_price',
+                    'underwriting_acceptance',
+                    'claims_decision',
+                    'fraud_referral',
+                    'reserving_input',
+                    'marketing_targeting',
+                    'none',
+                  ])
+                )
+                .optional(),
+              extendsExistingAutomation: z.boolean().optional(),
+              baselineReference: z.string().optional(),
+              analogueCaseIds: z.array(z.string()).optional(),
+              submittedAt: z.string().datetime({ offset: true }).optional(),
+              killDecisionDate: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }).optional(),
+              updatedAt: z.string().datetime({ offset: true }).optional(),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const UseCaseCandidateCreate = z
+  .object({
+    title: z.string(),
+    sponsorId: z.string(),
+    valueChainStep: z
+      .enum([
+        'product_development',
+        'marketing_and_sales',
+        'underwriting_and_risk_rating',
+        'customer_servicing',
+        'claims_management',
+        'financial_assets',
+        'operations',
+      ])
+      .optional(),
+    formula: z
+      .object({
+        functionalitySpec: z
+          .object({
+            functionality: z.enum(['inform', 'recommend', 'decide']),
+            description: z.string(),
+            modelFamilies: z
+              .array(
+                z.enum([
+                  'speech_voice_recognition',
+                  'sentiment_detection',
+                  'recommendation_engine',
+                  'text_analytics_nlp',
+                  'pattern_anomaly_detection',
+                  'automatic_decision_management',
+                  'natural_language_generation',
+                  'object_detection',
+                  'biometrics',
+                ])
+              )
+              .optional(),
+            humanReviewRequired: z.boolean().optional(),
+          })
+          .passthrough(),
+        dataDependencies: z
+          .array(
+            z
+              .object({
+                id: z.string(),
+                dataType: z.enum([
+                  'company',
+                  'public',
+                  'third_party',
+                  'customer',
+                ]),
+                name: z.string(),
+                structured: z.boolean().optional(),
+                permissionBasis: z
+                  .enum([
+                    'contractual',
+                    'consent',
+                    'legitimate_interest',
+                    'licensed',
+                    'public_domain',
+                    'not_established',
+                  ])
+                  .optional(),
+                onwardTransferTerms: z.string().optional(),
+                permissionRenewalDate: z.string().optional(),
+                expectedBookCoverage: z.number().optional(),
+                ownerId: z.string().optional(),
+              })
+              .passthrough()
+          )
+          .min(1),
+        need: z
+          .object({
+            audience: z.enum(['internal_customer', 'external_customer']),
+            needCategory: z.enum([
+              'product',
+              'communication',
+              'operations',
+              'cost',
+              'convenience',
+              'resources',
+            ]),
+            statement: z.string(),
+          })
+          .passthrough(),
+        statement: z.string().optional(),
+      })
+      .passthrough(),
+    touchpoints: z
+      .array(
+        z.enum([
+          'rating_factor',
+          'renewal_price',
+          'underwriting_acceptance',
+          'claims_decision',
+          'fraud_referral',
+          'reserving_input',
+          'marketing_targeting',
+          'none',
+        ])
+      )
+      .optional(),
+    extendsExistingAutomation: z.boolean().optional(),
+    baselineReference: z.string().optional(),
+    analogueCaseIds: z.array(z.string()).optional(),
+  })
+  .passthrough();
+const UseCaseCandidateResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+        title: z.string(),
+        sponsorId: z.string(),
+        valueChainStep: z
+          .enum([
+            'product_development',
+            'marketing_and_sales',
+            'underwriting_and_risk_rating',
+            'customer_servicing',
+            'claims_management',
+            'financial_assets',
+            'operations',
+          ])
+          .optional(),
+        stage: z.enum([
+          'submitted',
+          'formula_accepted',
+          'readiness_assessment',
+          'conduct_gate',
+          'awaiting_investment',
+          'in_delivery',
+          'live',
+          'benefit_close',
+          'killed',
+          'closed',
+        ]),
+        formula: z
+          .object({
+            functionalitySpec: z
+              .object({
+                functionality: z.enum(['inform', 'recommend', 'decide']),
+                description: z.string(),
+                modelFamilies: z
+                  .array(
+                    z.enum([
+                      'speech_voice_recognition',
+                      'sentiment_detection',
+                      'recommendation_engine',
+                      'text_analytics_nlp',
+                      'pattern_anomaly_detection',
+                      'automatic_decision_management',
+                      'natural_language_generation',
+                      'object_detection',
+                      'biometrics',
+                    ])
+                  )
+                  .optional(),
+                humanReviewRequired: z.boolean().optional(),
+              })
+              .passthrough(),
+            dataDependencies: z
+              .array(
+                z
+                  .object({
+                    id: z.string(),
+                    dataType: z.enum([
+                      'company',
+                      'public',
+                      'third_party',
+                      'customer',
+                    ]),
+                    name: z.string(),
+                    structured: z.boolean().optional(),
+                    permissionBasis: z
+                      .enum([
+                        'contractual',
+                        'consent',
+                        'legitimate_interest',
+                        'licensed',
+                        'public_domain',
+                        'not_established',
+                      ])
+                      .optional(),
+                    onwardTransferTerms: z.string().optional(),
+                    permissionRenewalDate: z.string().optional(),
+                    expectedBookCoverage: z.number().optional(),
+                    ownerId: z.string().optional(),
+                  })
+                  .passthrough()
+              )
+              .min(1),
+            need: z
+              .object({
+                audience: z.enum(['internal_customer', 'external_customer']),
+                needCategory: z.enum([
+                  'product',
+                  'communication',
+                  'operations',
+                  'cost',
+                  'convenience',
+                  'resources',
+                ]),
+                statement: z.string(),
+              })
+              .passthrough(),
+            statement: z.string().optional(),
+          })
+          .passthrough(),
+        valuePosition: z
+          .object({
+            resultType: z.enum(['known', 'unknown']),
+            impactType: z.enum(['bottom_line', 'top_line']),
+            quadrant: z.enum([
+              'operations_efficacy',
+              'customer_efficacy',
+              'operations_discovery',
+              'customer_discovery',
+            ]),
+            rationale: z.string().optional(),
+            assignedBy: z.string().optional(),
+          })
+          .passthrough()
+          .optional(),
+        touchpoints: z
+          .array(
+            z.enum([
+              'rating_factor',
+              'renewal_price',
+              'underwriting_acceptance',
+              'claims_decision',
+              'fraud_referral',
+              'reserving_input',
+              'marketing_targeting',
+              'none',
+            ])
+          )
+          .optional(),
+        extendsExistingAutomation: z.boolean().optional(),
+        baselineReference: z.string().optional(),
+        analogueCaseIds: z.array(z.string()).optional(),
+        submittedAt: z.string().datetime({ offset: true }).optional(),
+        killDecisionDate: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }).optional(),
+        updatedAt: z.string().datetime({ offset: true }).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ValuePositionCreate = z
+  .object({
+    resultType: z.enum(['known', 'unknown']),
+    impactType: z.enum(['bottom_line', 'top_line']),
+    rationale: z.string().optional(),
+  })
+  .passthrough();
+const ValuePositionResponse = z
+  .object({
+    data: z
+      .object({
+        resultType: z.enum(['known', 'unknown']),
+        impactType: z.enum(['bottom_line', 'top_line']),
+        quadrant: z.enum([
+          'operations_efficacy',
+          'customer_efficacy',
+          'operations_discovery',
+          'customer_discovery',
+        ]),
+        rationale: z.string().optional(),
+        assignedBy: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  submitUseCaseCandidate_Body,
+  setValuePosition_Body,
+  Cursor,
+  Limit,
+  CandidateStage,
+  ValueQuadrant,
+  ValueChainStep,
+  Problem,
+  CandidateId,
+  Functionality,
+  ModelFamily,
+  FunctionalitySpec,
+  DataType,
+  FormulaDataDependency,
+  NeedStatement,
+  Formula,
+  ValuePosition,
+  Touchpoint,
+  UseCaseCandidate,
+  UseCaseCandidateListData,
+  ResponseMeta,
+  UseCaseCandidateListResponse,
+  UseCaseCandidateCreate,
+  UseCaseCandidateResponse,
+  ValuePositionCreate,
+  ValuePositionResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/candidates',
+    alias: 'listUseCaseCandidates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+      {
+        name: 'stage',
+        type: 'Query',
+        schema: z
+          .enum([
+            'submitted',
+            'formula_accepted',
+            'readiness_assessment',
+            'conduct_gate',
+            'awaiting_investment',
+            'in_delivery',
+            'live',
+            'benefit_close',
+            'killed',
+            'closed',
+          ])
+          .optional(),
+      },
+      {
+        name: 'quadrant',
+        type: 'Query',
+        schema: z
+          .enum([
+            'operations_efficacy',
+            'customer_efficacy',
+            'operations_discovery',
+            'customer_discovery',
+          ])
+          .optional(),
+      },
+      {
+        name: 'valueChainStep',
+        type: 'Query',
+        schema: z
+          .enum([
+            'product_development',
+            'marketing_and_sales',
+            'underwriting_and_risk_rating',
+            'customer_servicing',
+            'claims_management',
+            'financial_assets',
+            'operations',
+          ])
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  title: z.string(),
+                  sponsorId: z.string(),
+                  valueChainStep: z
+                    .enum([
+                      'product_development',
+                      'marketing_and_sales',
+                      'underwriting_and_risk_rating',
+                      'customer_servicing',
+                      'claims_management',
+                      'financial_assets',
+                      'operations',
+                    ])
+                    .optional(),
+                  stage: z.enum([
+                    'submitted',
+                    'formula_accepted',
+                    'readiness_assessment',
+                    'conduct_gate',
+                    'awaiting_investment',
+                    'in_delivery',
+                    'live',
+                    'benefit_close',
+                    'killed',
+                    'closed',
+                  ]),
+                  formula: z
+                    .object({
+                      functionalitySpec: z
+                        .object({
+                          functionality: z.enum([
+                            'inform',
+                            'recommend',
+                            'decide',
+                          ]),
+                          description: z.string(),
+                          modelFamilies: z
+                            .array(
+                              z.enum([
+                                'speech_voice_recognition',
+                                'sentiment_detection',
+                                'recommendation_engine',
+                                'text_analytics_nlp',
+                                'pattern_anomaly_detection',
+                                'automatic_decision_management',
+                                'natural_language_generation',
+                                'object_detection',
+                                'biometrics',
+                              ])
+                            )
+                            .optional(),
+                          humanReviewRequired: z.boolean().optional(),
+                        })
+                        .passthrough(),
+                      dataDependencies: z
+                        .array(
+                          z
+                            .object({
+                              id: z.string(),
+                              dataType: z.enum([
+                                'company',
+                                'public',
+                                'third_party',
+                                'customer',
+                              ]),
+                              name: z.string(),
+                              structured: z.boolean().optional(),
+                              permissionBasis: z
+                                .enum([
+                                  'contractual',
+                                  'consent',
+                                  'legitimate_interest',
+                                  'licensed',
+                                  'public_domain',
+                                  'not_established',
+                                ])
+                                .optional(),
+                              onwardTransferTerms: z.string().optional(),
+                              permissionRenewalDate: z.string().optional(),
+                              expectedBookCoverage: z.number().optional(),
+                              ownerId: z.string().optional(),
+                            })
+                            .passthrough()
+                        )
+                        .min(1),
+                      need: z
+                        .object({
+                          audience: z.enum([
+                            'internal_customer',
+                            'external_customer',
+                          ]),
+                          needCategory: z.enum([
+                            'product',
+                            'communication',
+                            'operations',
+                            'cost',
+                            'convenience',
+                            'resources',
+                          ]),
+                          statement: z.string(),
+                        })
+                        .passthrough(),
+                      statement: z.string().optional(),
+                    })
+                    .passthrough(),
+                  valuePosition: z
+                    .object({
+                      resultType: z.enum(['known', 'unknown']),
+                      impactType: z.enum(['bottom_line', 'top_line']),
+                      quadrant: z.enum([
+                        'operations_efficacy',
+                        'customer_efficacy',
+                        'operations_discovery',
+                        'customer_discovery',
+                      ]),
+                      rationale: z.string().optional(),
+                      assignedBy: z.string().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+                  touchpoints: z
+                    .array(
+                      z.enum([
+                        'rating_factor',
+                        'renewal_price',
+                        'underwriting_acceptance',
+                        'claims_decision',
+                        'fraud_referral',
+                        'reserving_input',
+                        'marketing_targeting',
+                        'none',
+                      ])
+                    )
+                    .optional(),
+                  extendsExistingAutomation: z.boolean().optional(),
+                  baselineReference: z.string().optional(),
+                  analogueCaseIds: z.array(z.string()).optional(),
+                  submittedAt: z.string().datetime({ offset: true }).optional(),
+                  killDecisionDate: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }).optional(),
+                  updatedAt: z.string().datetime({ offset: true }).optional(),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/candidates',
+    alias: 'submitUseCaseCandidate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: submitUseCaseCandidate_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+            title: z.string(),
+            sponsorId: z.string(),
+            valueChainStep: z
+              .enum([
+                'product_development',
+                'marketing_and_sales',
+                'underwriting_and_risk_rating',
+                'customer_servicing',
+                'claims_management',
+                'financial_assets',
+                'operations',
+              ])
+              .optional(),
+            stage: z.enum([
+              'submitted',
+              'formula_accepted',
+              'readiness_assessment',
+              'conduct_gate',
+              'awaiting_investment',
+              'in_delivery',
+              'live',
+              'benefit_close',
+              'killed',
+              'closed',
+            ]),
+            formula: z
+              .object({
+                functionalitySpec: z
+                  .object({
+                    functionality: z.enum(['inform', 'recommend', 'decide']),
+                    description: z.string(),
+                    modelFamilies: z
+                      .array(
+                        z.enum([
+                          'speech_voice_recognition',
+                          'sentiment_detection',
+                          'recommendation_engine',
+                          'text_analytics_nlp',
+                          'pattern_anomaly_detection',
+                          'automatic_decision_management',
+                          'natural_language_generation',
+                          'object_detection',
+                          'biometrics',
+                        ])
+                      )
+                      .optional(),
+                    humanReviewRequired: z.boolean().optional(),
+                  })
+                  .passthrough(),
+                dataDependencies: z
+                  .array(
+                    z
+                      .object({
+                        id: z.string(),
+                        dataType: z.enum([
+                          'company',
+                          'public',
+                          'third_party',
+                          'customer',
+                        ]),
+                        name: z.string(),
+                        structured: z.boolean().optional(),
+                        permissionBasis: z
+                          .enum([
+                            'contractual',
+                            'consent',
+                            'legitimate_interest',
+                            'licensed',
+                            'public_domain',
+                            'not_established',
+                          ])
+                          .optional(),
+                        onwardTransferTerms: z.string().optional(),
+                        permissionRenewalDate: z.string().optional(),
+                        expectedBookCoverage: z.number().optional(),
+                        ownerId: z.string().optional(),
+                      })
+                      .passthrough()
+                  )
+                  .min(1),
+                need: z
+                  .object({
+                    audience: z.enum([
+                      'internal_customer',
+                      'external_customer',
+                    ]),
+                    needCategory: z.enum([
+                      'product',
+                      'communication',
+                      'operations',
+                      'cost',
+                      'convenience',
+                      'resources',
+                    ]),
+                    statement: z.string(),
+                  })
+                  .passthrough(),
+                statement: z.string().optional(),
+              })
+              .passthrough(),
+            valuePosition: z
+              .object({
+                resultType: z.enum(['known', 'unknown']),
+                impactType: z.enum(['bottom_line', 'top_line']),
+                quadrant: z.enum([
+                  'operations_efficacy',
+                  'customer_efficacy',
+                  'operations_discovery',
+                  'customer_discovery',
+                ]),
+                rationale: z.string().optional(),
+                assignedBy: z.string().optional(),
+              })
+              .passthrough()
+              .optional(),
+            touchpoints: z
+              .array(
+                z.enum([
+                  'rating_factor',
+                  'renewal_price',
+                  'underwriting_acceptance',
+                  'claims_decision',
+                  'fraud_referral',
+                  'reserving_input',
+                  'marketing_targeting',
+                  'none',
+                ])
+              )
+              .optional(),
+            extendsExistingAutomation: z.boolean().optional(),
+            baselineReference: z.string().optional(),
+            analogueCaseIds: z.array(z.string()).optional(),
+            submittedAt: z.string().datetime({ offset: true }).optional(),
+            killDecisionDate: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/candidates/:candidateId',
+    alias: 'getUseCaseCandidate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'candidateId',
+        type: 'Path',
+        schema: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+            title: z.string(),
+            sponsorId: z.string(),
+            valueChainStep: z
+              .enum([
+                'product_development',
+                'marketing_and_sales',
+                'underwriting_and_risk_rating',
+                'customer_servicing',
+                'claims_management',
+                'financial_assets',
+                'operations',
+              ])
+              .optional(),
+            stage: z.enum([
+              'submitted',
+              'formula_accepted',
+              'readiness_assessment',
+              'conduct_gate',
+              'awaiting_investment',
+              'in_delivery',
+              'live',
+              'benefit_close',
+              'killed',
+              'closed',
+            ]),
+            formula: z
+              .object({
+                functionalitySpec: z
+                  .object({
+                    functionality: z.enum(['inform', 'recommend', 'decide']),
+                    description: z.string(),
+                    modelFamilies: z
+                      .array(
+                        z.enum([
+                          'speech_voice_recognition',
+                          'sentiment_detection',
+                          'recommendation_engine',
+                          'text_analytics_nlp',
+                          'pattern_anomaly_detection',
+                          'automatic_decision_management',
+                          'natural_language_generation',
+                          'object_detection',
+                          'biometrics',
+                        ])
+                      )
+                      .optional(),
+                    humanReviewRequired: z.boolean().optional(),
+                  })
+                  .passthrough(),
+                dataDependencies: z
+                  .array(
+                    z
+                      .object({
+                        id: z.string(),
+                        dataType: z.enum([
+                          'company',
+                          'public',
+                          'third_party',
+                          'customer',
+                        ]),
+                        name: z.string(),
+                        structured: z.boolean().optional(),
+                        permissionBasis: z
+                          .enum([
+                            'contractual',
+                            'consent',
+                            'legitimate_interest',
+                            'licensed',
+                            'public_domain',
+                            'not_established',
+                          ])
+                          .optional(),
+                        onwardTransferTerms: z.string().optional(),
+                        permissionRenewalDate: z.string().optional(),
+                        expectedBookCoverage: z.number().optional(),
+                        ownerId: z.string().optional(),
+                      })
+                      .passthrough()
+                  )
+                  .min(1),
+                need: z
+                  .object({
+                    audience: z.enum([
+                      'internal_customer',
+                      'external_customer',
+                    ]),
+                    needCategory: z.enum([
+                      'product',
+                      'communication',
+                      'operations',
+                      'cost',
+                      'convenience',
+                      'resources',
+                    ]),
+                    statement: z.string(),
+                  })
+                  .passthrough(),
+                statement: z.string().optional(),
+              })
+              .passthrough(),
+            valuePosition: z
+              .object({
+                resultType: z.enum(['known', 'unknown']),
+                impactType: z.enum(['bottom_line', 'top_line']),
+                quadrant: z.enum([
+                  'operations_efficacy',
+                  'customer_efficacy',
+                  'operations_discovery',
+                  'customer_discovery',
+                ]),
+                rationale: z.string().optional(),
+                assignedBy: z.string().optional(),
+              })
+              .passthrough()
+              .optional(),
+            touchpoints: z
+              .array(
+                z.enum([
+                  'rating_factor',
+                  'renewal_price',
+                  'underwriting_acceptance',
+                  'claims_decision',
+                  'fraud_referral',
+                  'reserving_input',
+                  'marketing_targeting',
+                  'none',
+                ])
+              )
+              .optional(),
+            extendsExistingAutomation: z.boolean().optional(),
+            baselineReference: z.string().optional(),
+            analogueCaseIds: z.array(z.string()).optional(),
+            submittedAt: z.string().datetime({ offset: true }).optional(),
+            killDecisionDate: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/candidates/:candidateId/adjacency',
+    alias: 'getAdjacentUseCases',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'candidateId',
+        type: 'Path',
+        schema: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  title: z.string(),
+                  sponsorId: z.string(),
+                  valueChainStep: z
+                    .enum([
+                      'product_development',
+                      'marketing_and_sales',
+                      'underwriting_and_risk_rating',
+                      'customer_servicing',
+                      'claims_management',
+                      'financial_assets',
+                      'operations',
+                    ])
+                    .optional(),
+                  stage: z.enum([
+                    'submitted',
+                    'formula_accepted',
+                    'readiness_assessment',
+                    'conduct_gate',
+                    'awaiting_investment',
+                    'in_delivery',
+                    'live',
+                    'benefit_close',
+                    'killed',
+                    'closed',
+                  ]),
+                  formula: z
+                    .object({
+                      functionalitySpec: z
+                        .object({
+                          functionality: z.enum([
+                            'inform',
+                            'recommend',
+                            'decide',
+                          ]),
+                          description: z.string(),
+                          modelFamilies: z
+                            .array(
+                              z.enum([
+                                'speech_voice_recognition',
+                                'sentiment_detection',
+                                'recommendation_engine',
+                                'text_analytics_nlp',
+                                'pattern_anomaly_detection',
+                                'automatic_decision_management',
+                                'natural_language_generation',
+                                'object_detection',
+                                'biometrics',
+                              ])
+                            )
+                            .optional(),
+                          humanReviewRequired: z.boolean().optional(),
+                        })
+                        .passthrough(),
+                      dataDependencies: z
+                        .array(
+                          z
+                            .object({
+                              id: z.string(),
+                              dataType: z.enum([
+                                'company',
+                                'public',
+                                'third_party',
+                                'customer',
+                              ]),
+                              name: z.string(),
+                              structured: z.boolean().optional(),
+                              permissionBasis: z
+                                .enum([
+                                  'contractual',
+                                  'consent',
+                                  'legitimate_interest',
+                                  'licensed',
+                                  'public_domain',
+                                  'not_established',
+                                ])
+                                .optional(),
+                              onwardTransferTerms: z.string().optional(),
+                              permissionRenewalDate: z.string().optional(),
+                              expectedBookCoverage: z.number().optional(),
+                              ownerId: z.string().optional(),
+                            })
+                            .passthrough()
+                        )
+                        .min(1),
+                      need: z
+                        .object({
+                          audience: z.enum([
+                            'internal_customer',
+                            'external_customer',
+                          ]),
+                          needCategory: z.enum([
+                            'product',
+                            'communication',
+                            'operations',
+                            'cost',
+                            'convenience',
+                            'resources',
+                          ]),
+                          statement: z.string(),
+                        })
+                        .passthrough(),
+                      statement: z.string().optional(),
+                    })
+                    .passthrough(),
+                  valuePosition: z
+                    .object({
+                      resultType: z.enum(['known', 'unknown']),
+                      impactType: z.enum(['bottom_line', 'top_line']),
+                      quadrant: z.enum([
+                        'operations_efficacy',
+                        'customer_efficacy',
+                        'operations_discovery',
+                        'customer_discovery',
+                      ]),
+                      rationale: z.string().optional(),
+                      assignedBy: z.string().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+                  touchpoints: z
+                    .array(
+                      z.enum([
+                        'rating_factor',
+                        'renewal_price',
+                        'underwriting_acceptance',
+                        'claims_decision',
+                        'fraud_referral',
+                        'reserving_input',
+                        'marketing_targeting',
+                        'none',
+                      ])
+                    )
+                    .optional(),
+                  extendsExistingAutomation: z.boolean().optional(),
+                  baselineReference: z.string().optional(),
+                  analogueCaseIds: z.array(z.string()).optional(),
+                  submittedAt: z.string().datetime({ offset: true }).optional(),
+                  killDecisionDate: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }).optional(),
+                  updatedAt: z.string().datetime({ offset: true }).optional(),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/v1/candidates/:candidateId/value-position',
+    alias: 'setValuePosition',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: setValuePosition_Body,
+      },
+      {
+        name: 'candidateId',
+        type: 'Path',
+        schema: z.string().regex(/^can_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            resultType: z.enum(['known', 'unknown']),
+            impactType: z.enum(['bottom_line', 'top_line']),
+            quadrant: z.enum([
+              'operations_efficacy',
+              'customer_efficacy',
+              'operations_discovery',
+              'customer_discovery',
+            ]),
+            rationale: z.string().optional(),
+            assignedBy: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

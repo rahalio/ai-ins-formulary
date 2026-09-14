@@ -1,0 +1,233 @@
+openapi: 3.1.0
+info:
+  title: Candidates schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    CandidateStage:
+      type: string
+      enum:
+        - submitted
+        - formula_accepted
+        - readiness_assessment
+        - conduct_gate
+        - awaiting_investment
+        - in_delivery
+        - live
+        - benefit_close
+        - killed
+        - closed
+    ValueChainStep:
+      type: string
+      enum:
+        - product_development
+        - marketing_and_sales
+        - underwriting_and_risk_rating
+        - customer_servicing
+        - claims_management
+        - financial_assets
+        - operations
+    Functionality:
+      type: string
+      description: The x term of the formula
+      enum: [inform, recommend, decide]
+    NeedStatement:
+      type: object
+      required: [audience, needCategory, statement]
+      properties:
+        audience:
+          type: string
+          enum: [internal_customer, external_customer]
+        needCategory:
+          type: string
+          enum: [product, communication, operations, cost, convenience, resources]
+        statement:
+          type: string
+          description: The z term of the formula, stated as a need not a solution
+    FunctionalitySpec:
+      type: object
+      required: [functionality, description]
+      properties:
+        functionality:
+          $ref: '#/components/schemas/Functionality'
+        description:
+          type: string
+        modelFamilies:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/ModelFamily
+        humanReviewRequired:
+          type: boolean
+    FormulaDataDependency:
+      type: object
+      required: [id, dataType, name]
+      properties:
+        id:
+          type: string
+        dataType:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/DataType
+        name:
+          type: string
+          example: Motor telematics behavioural feed
+        structured:
+          type: boolean
+        permissionBasis:
+          type: string
+          enum: [contractual, consent, legitimate_interest, licensed, public_domain, not_established]
+        onwardTransferTerms:
+          type: string
+        permissionRenewalDate:
+          type: string
+          format: date
+        expectedBookCoverage:
+          type: number
+          format: float
+          description: Share of the in-force book realistically covered
+        ownerId:
+          type: string
+    Formula:
+      type: object
+      required: [functionalitySpec, dataDependencies, need]
+      properties:
+        functionalitySpec:
+          $ref: '#/components/schemas/FunctionalitySpec'
+        dataDependencies:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FormulaDataDependency'
+        need:
+          $ref: '#/components/schemas/NeedStatement'
+        statement:
+          type: string
+          description: Rendered formula sentence for communication
+    ValuePosition:
+      type: object
+      required: [resultType, impactType, quadrant]
+      properties:
+        resultType:
+          type: string
+          enum: [known, unknown]
+        impactType:
+          type: string
+          enum: [bottom_line, top_line]
+        quadrant:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/ValueQuadrant
+        rationale:
+          type: string
+        assignedBy:
+          type: string
+    ValuePositionCreate:
+      type: object
+      required: [resultType, impactType]
+      properties:
+        resultType:
+          type: string
+          enum: [known, unknown]
+        impactType:
+          type: string
+          enum: [bottom_line, top_line]
+        rationale:
+          type: string
+    UseCaseCandidate:
+      type: object
+      required: [id, title, stage, sponsorId, formula]
+      properties:
+        id:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        title:
+          type: string
+        sponsorId:
+          type: string
+        valueChainStep:
+          $ref: '#/components/schemas/ValueChainStep'
+        stage:
+          $ref: '#/components/schemas/CandidateStage'
+        formula:
+          $ref: '#/components/schemas/Formula'
+        valuePosition:
+          $ref: '#/components/schemas/ValuePosition'
+        touchpoints:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+        extendsExistingAutomation:
+          type: boolean
+        baselineReference:
+          type: string
+          description: Existing straight-through baseline the increment sits above
+        analogueCaseIds:
+          type: array
+          items:
+            type: string
+        submittedAt:
+          type: string
+          format: date-time
+        killDecisionDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UseCaseCandidateCreate:
+      type: object
+      required: [title, sponsorId, formula]
+      properties:
+        title:
+          type: string
+        sponsorId:
+          type: string
+        valueChainStep:
+          $ref: '#/components/schemas/ValueChainStep'
+        formula:
+          $ref: '#/components/schemas/Formula'
+        touchpoints:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Touchpoint
+        extendsExistingAutomation:
+          type: boolean
+        baselineReference:
+          type: string
+        analogueCaseIds:
+          type: array
+          items:
+            type: string
+    UseCaseCandidateListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UseCaseCandidate'
+        nextCursor:
+          type: string
+    UseCaseCandidateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UseCaseCandidate'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    UseCaseCandidateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UseCaseCandidateListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ValuePositionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ValuePosition'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

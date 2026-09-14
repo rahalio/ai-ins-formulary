@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: Formulary Readiness API
+  version: 0.1.0
+  description: Data dependency readiness verdicts and data blockers.
+  x-domain: rdy
+  x-product-slug: ai-ins-formulary
+servers:
+  - url: https://api.formulary.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Readiness
+    description: Data dependency readiness verdicts and data blockers
+paths:
+  /v1/candidates/{candidateId}/readiness:
+    parameters:
+      - $ref: ./common/formulary-primitives.yaml#/components/parameters/CandidateId
+    post:
+      operationId: issueDataReadinessVerdict
+      tags: [Readiness]
+      summary: Issue data-readiness verdict
+      x-repository: DataReadinessVerdict
+      x-dynamodb:
+        entityType: "READINESS"
+        pkPatternTemplate: "CANDIDATE#${candidateId}"
+        skPatternTemplate: "READINESS#${id}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./readiness.schemas.yaml#/components/schemas/DataReadinessVerdictCreate
+      responses:
+        "201":
+          description: Readiness verdict issued by the accountable data owner
+          content:
+            application/json:
+              schema:
+                $ref: ./readiness.schemas.yaml#/components/schemas/DataReadinessVerdictResponse
+        "422":
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    get:
+      operationId: getDataReadinessVerdict
+      tags: [Readiness]
+      summary: Get current readiness verdict
+      x-repository: DataReadinessVerdict
+      x-dynamodb:
+        entityType: "READINESS"
+        pkPatternTemplate: "CANDIDATE#${candidateId}"
+        skPatternTemplate: "READINESS#${id}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current readiness verdict per data dependency
+          content:
+            application/json:
+              schema:
+                $ref: ./readiness.schemas.yaml#/components/schemas/DataReadinessVerdictResponse
+        "404":
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/readiness/data-blockers:
+    get:
+      operationId: listDataBlockers
+      tags: [Readiness]
+      summary: List aggregated data blockers
+      x-repository: DataBlocker
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Cursor
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Limit
+        - name: blockerType
+          in: query
+          schema:
+            type: string
+            enum:
+              - not_available
+              - quality_insufficient
+              - no_permission_basis
+              - permission_expired
+              - coverage_too_low
+              - unstructured_unusable
+              - lineage_unknown
+      responses:
+        "200":
+          description: Aggregated blockers across stopped candidates
+          content:
+            application/json:
+              schema:
+                $ref: ./readiness.schemas.yaml#/components/schemas/DataBlockerListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

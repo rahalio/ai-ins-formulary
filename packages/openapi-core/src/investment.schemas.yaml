@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: Investment schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    KillCriterion:
+      type: object
+      required: [description, measure]
+      properties:
+        description:
+          type: string
+        measure:
+          type: string
+          example: model precision below 0.6 on holdout claims population
+        threshold:
+          type: number
+          format: float
+        met:
+          type: boolean
+    ExpectedBenefit:
+      type: object
+      required: [benefitKind, magnitude, period]
+      properties:
+        benefitKind:
+          type: string
+          enum:
+            - loss_ratio_points
+            - expense_ratio_points
+            - premium_growth
+            - retention_improvement
+            - avoided_cost
+        magnitude:
+          type: number
+          format: float
+        monetaryEquivalent:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        lineOfBusiness:
+          type: string
+        baselineIsolated:
+          type: boolean
+        baselineDescription:
+          type: string
+        period:
+          type: string
+    InvestmentDecision:
+      type: object
+      required: [id, candidateId, decision, approvedAmount]
+      properties:
+        id:
+          type: string
+          pattern: '^inv_[0-9A-HJKMNP-TV-Z]{26}$'
+        candidateId:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        decision:
+          type: string
+          enum: [approved, deferred, rejected]
+        approvedAmount:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        firstReleaseScope:
+          type: string
+        firstReleaseWithinSmallStartLimit:
+          type: boolean
+        expectedBenefit:
+          $ref: '#/components/schemas/ExpectedBenefit'
+        killCriteria:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/KillCriterion'
+        killDecisionDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    InvestmentDecisionCreate:
+      type: object
+      required: [decision, approvedAmount, killCriteria, killDecisionDate]
+      properties:
+        decision:
+          type: string
+          enum: [approved, deferred, rejected]
+        approvedAmount:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        firstReleaseScope:
+          type: string
+        expectedBenefit:
+          $ref: '#/components/schemas/ExpectedBenefit'
+        killCriteria:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/KillCriterion'
+        killDecisionDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+    KillReviewRequest:
+      type: object
+      required: [reviewerId, outcome]
+      properties:
+        reviewerId:
+          type: string
+        outcome:
+          type: string
+          enum: [continue, kill, criteria_not_yet_testable]
+        metCriteria:
+          type: array
+          items:
+            type: string
+        rationale:
+          type: string
+    InvestmentDecisionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/InvestmentDecision'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

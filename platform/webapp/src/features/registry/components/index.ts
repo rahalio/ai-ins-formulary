@@ -1,0 +1,2 @@
+/** Feature components placeholder */
+export {};

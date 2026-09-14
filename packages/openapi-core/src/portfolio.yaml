@@ -1,0 +1,141 @@
+openapi: 3.1.0
+info:
+  title: Formulary Portfolio API
+  version: 0.1.0
+  description: Quadrant balance, committee reporting, and analogue library.
+  x-domain: ptf
+  x-product-slug: ai-ins-formulary
+servers:
+  - url: https://api.formulary.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Portfolio
+    description: Quadrant balance, committee reporting, and analogue library
+paths:
+  /v1/portfolio/balance:
+    get:
+      operationId: getPortfolioBalance
+      tags: [Portfolio]
+      summary: Get portfolio quadrant balance
+      x-repository: none
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: 2026-Q3
+      responses:
+        "200":
+          description: Committed spend by quadrant against target balance
+          content:
+            application/json:
+              schema:
+                $ref: ./portfolio.schemas.yaml#/components/schemas/PortfolioBalanceResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/portfolio/committee-pack:
+    get:
+      operationId: getCommitteePack
+      tags: [Portfolio]
+      summary: Get quarterly investment committee pack
+      x-repository: none
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quarterly spend, balance, booked benefit, kills, and blockers
+          content:
+            application/json:
+              schema:
+                $ref: ./portfolio.schemas.yaml#/components/schemas/CommitteePackResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/portfolio/analogues:
+    get:
+      operationId: listAnalogueCases
+      tags: [Portfolio]
+      summary: List analogue cases
+      x-repository: AnalogueCase
+      x-dynamodb:
+        entityType: "ANALOGUE"
+        pkPatternTemplate: "ANALOGUE#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Cursor
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Limit
+        - name: sourceIndustry
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cross-industry cases with stated transfer assumptions
+          content:
+            application/json:
+              schema:
+                $ref: ./portfolio.schemas.yaml#/components/schemas/AnalogueCaseListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: recordAnalogueCase
+      tags: [Portfolio]
+      summary: Record analogue case with transfer assumption
+      x-repository: AnalogueCase
+      x-dynamodb:
+        entityType: "ANALOGUE"
+        pkPatternTemplate: "ANALOGUE#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./portfolio.schemas.yaml#/components/schemas/AnalogueCaseCreate
+      responses:
+        "201":
+          description: Analogue recorded with its explicit transfer assumption
+          content:
+            application/json:
+              schema:
+                $ref: ./portfolio.schemas.yaml#/components/schemas/AnalogueCaseResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

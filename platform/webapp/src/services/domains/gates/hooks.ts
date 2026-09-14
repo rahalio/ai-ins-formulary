@@ -1,0 +1,2 @@
+/** Hooks for gates */
+export {};

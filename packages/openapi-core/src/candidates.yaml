@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: Formulary Candidates API
+  version: 0.1.0
+  description: |
+    Use-case intake, formula completeness, value map positioning, and adjacency.
+  x-domain: cand
+  x-product-slug: ai-ins-formulary
+servers:
+  - url: https://api.formulary.local
+    description: Local / starter API
+security:
+  - bearerAuth: []
+tags:
+  - name: Candidates
+    description: Use-case intake, formula completeness, and value map positioning
+paths:
+  /v1/candidates:
+    get:
+      operationId: listUseCaseCandidates
+      tags: [Candidates]
+      summary: List use-case candidates
+      x-repository: UseCaseCandidate
+      x-dynamodb:
+        entityType: "CANDIDATE"
+        pkPatternTemplate: "CANDIDATE#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        gsi1PKPatternTemplate: "CANDIDATE#STAGE#${stage}"
+        gsi1SKPatternTemplate: "${submittedAt}"
+        filterFields: ["stage", "valueChainStep"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Cursor
+        - $ref: ./common/formulary-primitives.yaml#/components/parameters/Limit
+        - name: stage
+          in: query
+          schema:
+            $ref: ./candidates.schemas.yaml#/components/schemas/CandidateStage
+        - name: quadrant
+          in: query
+          schema:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/ValueQuadrant
+        - name: valueChainStep
+          in: query
+          schema:
+            $ref: ./candidates.schemas.yaml#/components/schemas/ValueChainStep
+      responses:
+        "200":
+          description: Candidates page
+          content:
+            application/json:
+              schema:
+                $ref: ./candidates.schemas.yaml#/components/schemas/UseCaseCandidateListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: submitUseCaseCandidate
+      tags: [Candidates]
+      summary: Submit a use-case candidate with a complete formula
+      x-repository: UseCaseCandidate
+      x-dynamodb:
+        entityType: "CANDIDATE"
+        pkPatternTemplate: "CANDIDATE#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        gsi1PKPatternTemplate: "CANDIDATE#STAGE#${stage}"
+        gsi1SKPatternTemplate: "${submittedAt}"
+        filterFields: ["stage", "valueChainStep"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./candidates.schemas.yaml#/components/schemas/UseCaseCandidateCreate
+      responses:
+        "201":
+          description: Candidate admitted with a complete formula
+          content:
+            application/json:
+              schema:
+                $ref: ./candidates.schemas.yaml#/components/schemas/UseCaseCandidateResponse
+        "422":
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/candidates/{candidateId}:
+    parameters:
+      - $ref: ./common/formulary-primitives.yaml#/components/parameters/CandidateId
+    get:
+      operationId: getUseCaseCandidate
+      tags: [Candidates]
+      summary: Get candidate detail
+      x-repository: UseCaseCandidate
+      x-dynamodb:
+        entityType: "CANDIDATE"
+        pkPatternTemplate: "CANDIDATE#${id}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        gsi1PKPatternTemplate: "CANDIDATE#STAGE#${stage}"
+        gsi1SKPatternTemplate: "${submittedAt}"
+        filterFields: ["stage", "valueChainStep"]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Candidate with formula, quadrant, gates, and benefit state
+          content:
+            application/json:
+              schema:
+                $ref: ./candidates.schemas.yaml#/components/schemas/UseCaseCandidateResponse
+        "404":
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/candidates/{candidateId}/value-position:
+    parameters:
+      - $ref: ./common/formulary-primitives.yaml#/components/parameters/CandidateId
+    put:
+      operationId: setValuePosition
+      tags: [Candidates]
+      summary: Assign value-map quadrant
+      x-repository: UseCaseCandidate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./candidates.schemas.yaml#/components/schemas/ValuePositionCreate
+      responses:
+        "200":
+          description: Quadrant assigned on result type and impact type
+          content:
+            application/json:
+              schema:
+                $ref: ./candidates.schemas.yaml#/components/schemas/ValuePositionResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        "404":
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/candidates/{candidateId}/adjacency:
+    parameters:
+      - $ref: ./common/formulary-primitives.yaml#/components/parameters/CandidateId
+    get:
+      operationId: getAdjacentUseCases
+      tags: [Candidates]
+      summary: Find adjacent or duplicate use cases
+      x-repository: none
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Delivered or in-flight use cases addressing the same need
+          content:
+            application/json:
+              schema:
+                $ref: ./candidates.schemas.yaml#/components/schemas/UseCaseCandidateListResponse
+        "401":
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

@@ -1,0 +1,1541 @@
+# SUPERSEDED — authoring source of truth is packages/openapi-core/src/{domain}.yaml
+# Domains: identity, candidates, readiness, gates, investment, registry, benefits, portfolio
+# Keep this file for historical reference from the product pack; do not edit for codegen.
+openapi: 3.0.3
+info:
+  title: Formulary
+  version: 0.1.0
+  description: >-
+    Use-case formulary for insurance AI investment. Admits candidates only with a
+    complete functionality, data, and need formula, positions each on the value map,
+    gates them on data readiness and conduct review before build, fixes kill
+    criteria at admission, and closes each use case against benefit confirmed by
+    finance in loss-ratio and expense-ratio terms.
+  x-product-slug: ai-ins-formulary
+  x-source: ai-in-insurance/deloitte-artificial-intelligence-in-insurance/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Candidates
+    description: Use-case intake, formula completeness, and value map positioning
+  - name: Readiness
+    description: Data dependency readiness verdicts and data blockers
+  - name: Gates
+    description: Conduct and actuarial review, proxy and feature risk findings
+  - name: Investment
+    description: First-release sizing, kill criteria, and funding decisions
+  - name: Registry
+    description: Production model and data dependency registration
+  - name: Benefits
+    description: Benefit claims and finance-confirmed closes
+  - name: Portfolio
+    description: Quadrant balance, committee reporting, and analogue library
+paths:
+  /v1/candidates:
+    get:
+      operationId: listUseCaseCandidates
+      tags: [Candidates]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: stage
+          in: query
+          schema:
+            $ref: "#/components/schemas/CandidateStage"
+        - name: quadrant
+          in: query
+          schema:
+            $ref: "#/components/schemas/ValueQuadrant"
+        - name: valueChainStep
+          in: query
+          schema:
+            $ref: "#/components/schemas/ValueChainStep"
+      responses:
+        "200":
+          description: Candidates page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeUseCaseCandidate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: submitUseCaseCandidate
+      tags: [Candidates]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UseCaseCandidateCreate"
+      responses:
+        "201":
+          description: Candidate admitted with a complete formula
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeUseCaseCandidate"
+        "422":
+          description: >-
+            Rejected because the formula is incomplete. Raised when functionality,
+            data dependencies, or the addressed need is missing, or when the
+            submission states a solution without a need.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/candidates/{candidateId}:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    get:
+      operationId: getUseCaseCandidate
+      tags: [Candidates]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Candidate with formula, quadrant, gates, and benefit state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeUseCaseCandidate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/candidates/{candidateId}/value-position:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    put:
+      operationId: setValuePosition
+      tags: [Candidates]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValuePositionCreate"
+      responses:
+        "200":
+          description: Quadrant assigned on result type and impact type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeValuePosition"
+  /v1/candidates/{candidateId}/adjacency:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    get:
+      operationId: getAdjacentUseCases
+      tags: [Candidates]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Delivered or in-flight use cases addressing the same need
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeUseCaseCandidate"
+  /v1/candidates/{candidateId}/readiness:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    post:
+      operationId: issueDataReadinessVerdict
+      tags: [Readiness]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DataReadinessVerdictCreate"
+      responses:
+        "201":
+          description: Readiness verdict issued by the accountable data owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeDataReadinessVerdict"
+        "422":
+          description: >-
+            Rejected when a customer-data dependency is sized on total policy
+            count rather than realistic consent coverage of the in-force book.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    get:
+      operationId: getDataReadinessVerdict
+      tags: [Readiness]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current readiness verdict per data dependency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeDataReadinessVerdict"
+  /v1/readiness/data-blockers:
+    get:
+      operationId: listDataBlockers
+      tags: [Readiness]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: blockerType
+          in: query
+          schema:
+            type: string
+            enum:
+              - not_available
+              - quality_insufficient
+              - no_permission_basis
+              - permission_expired
+              - coverage_too_low
+              - unstructured_unusable
+              - lineage_unknown
+      responses:
+        "200":
+          description: Aggregated blockers across stopped candidates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeDataBlocker"
+  /v1/candidates/{candidateId}/conduct-gate:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    post:
+      operationId: openConductGateReview
+      tags: [Gates]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConductGateReviewCreate"
+      responses:
+        "201":
+          description: Conduct review opened for the declared touchpoints
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeConductGateReview"
+  /v1/conduct-gate-reviews/{reviewId}/decision:
+    parameters:
+      - $ref: "#/components/parameters/ReviewId"
+    post:
+      operationId: decideConductGate
+      tags: [Gates]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [officerId, outcome, rationale]
+              properties:
+                officerId:
+                  type: string
+                outcome:
+                  type: string
+                  enum: [approved, approved_with_conditions, withheld]
+                rationale:
+                  type: string
+                conditions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Gate decision recorded and binding on build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeConductGateReview"
+  /v1/conduct-gate-reviews/{reviewId}/feature-risk-findings:
+    parameters:
+      - $ref: "#/components/parameters/ReviewId"
+    post:
+      operationId: raiseFeatureRiskFinding
+      tags: [Gates]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeatureRiskFindingCreate"
+      responses:
+        "201":
+          description: Proxy or prohibited-practice finding raised against a feature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeFeatureRiskFinding"
+  /v1/candidates/{candidateId}/investment:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    post:
+      operationId: approveInvestment
+      tags: [Investment]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentDecisionCreate"
+      responses:
+        "201":
+          description: Investment approved with first-release scope and kill criteria
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeInvestmentDecision"
+        "409":
+          description: >-
+            Rejected because a required gate is missing or withheld, or the first
+            release exceeds the portfolio small-start limit and must be decomposed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/candidates/{candidateId}/kill-review:
+    parameters:
+      - $ref: "#/components/parameters/CandidateId"
+    post:
+      operationId: reviewKillCriteria
+      tags: [Investment]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reviewerId, outcome]
+              properties:
+                reviewerId:
+                  type: string
+                outcome:
+                  type: string
+                  enum: [continue, kill, criteria_not_yet_testable]
+                metCriteria:
+                  type: array
+                  items:
+                    type: string
+                rationale:
+                  type: string
+      responses:
+        "200":
+          description: Kill decision at the agreed decision date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeUseCaseCandidate"
+        "422":
+          description: >-
+            Rejected when a candidate meeting its kill criteria is submitted for
+            re-scoping instead of closure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/registry/models:
+    get:
+      operationId: listModelRegistrations
+      tags: [Registry]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: modelFamily
+          in: query
+          schema:
+            $ref: "#/components/schemas/ModelFamily"
+        - name: unowned
+          in: query
+          schema:
+            type: boolean
+            description: Filter to production models with no registered owner
+      responses:
+        "200":
+          description: Registered production models with owners and dependencies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeModelRegistration"
+    post:
+      operationId: registerModel
+      tags: [Registry]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelRegistrationCreate"
+      responses:
+        "201":
+          description: Model registered against its use cases and gate outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelRegistration"
+  /v1/registry/data-dependencies:
+    get:
+      operationId: listDataDependencies
+      tags: [Registry]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: dataType
+          in: query
+          schema:
+            $ref: "#/components/schemas/DataType"
+        - name: permissionExpiringWithinDays
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dependencies with permission basis and renewal dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeDataDependency"
+  /v1/benefits/claims:
+    post:
+      operationId: claimBenefit
+      tags: [Benefits]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BenefitClaimCreate"
+      responses:
+        "201":
+          description: Benefit claimed in loss-ratio, expense-ratio, or revenue terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeBenefitClaim"
+        "422":
+          description: >-
+            Rejected when an increment on existing automation does not isolate the
+            benefit above the recorded baseline.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/benefits/claims/{claimId}/close:
+    parameters:
+      - $ref: "#/components/parameters/ClaimId"
+    post:
+      operationId: closeBenefitWithFinance
+      tags: [Benefits]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BenefitCloseCreate"
+      responses:
+        "200":
+          description: Finance confirmation or denial of the claimed movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeBenefitClose"
+  /v1/portfolio/balance:
+    get:
+      operationId: getPortfolioBalance
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: 2026-Q3
+      responses:
+        "200":
+          description: Committed spend by quadrant against target balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopePortfolioBalance"
+  /v1/portfolio/committee-pack:
+    get:
+      operationId: getCommitteePack
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quarterly spend, balance, booked benefit, kills, and blockers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCommitteePack"
+  /v1/portfolio/analogues:
+    get:
+      operationId: listAnalogueCases
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: sourceIndustry
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cross-industry cases with stated transfer assumptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAnalogueCase"
+    post:
+      operationId: recordAnalogueCase
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalogueCaseCreate"
+      responses:
+        "201":
+          description: Analogue recorded with its explicit transfer assumption
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeAnalogueCase"
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    CandidateId:
+      name: candidateId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema:
+        type: string
+    ClaimId:
+      name: claimId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          example: EUR
+    CandidateStage:
+      type: string
+      enum:
+        - submitted
+        - formula_accepted
+        - readiness_assessment
+        - conduct_gate
+        - awaiting_investment
+        - in_delivery
+        - live
+        - benefit_close
+        - killed
+        - closed
+    ValueQuadrant:
+      type: string
+      description: Position on the result-type and impact-type axes
+      enum:
+        - operations_efficacy
+        - customer_efficacy
+        - operations_discovery
+        - customer_discovery
+    ValueChainStep:
+      type: string
+      enum:
+        - product_development
+        - marketing_and_sales
+        - underwriting_and_risk_rating
+        - customer_servicing
+        - claims_management
+        - financial_assets
+        - operations
+    Functionality:
+      type: string
+      description: The x term of the formula
+      enum: [inform, recommend, decide]
+    DataType:
+      type: string
+      description: The y term of the formula
+      enum: [company, public, third_party, customer]
+    ModelFamily:
+      type: string
+      enum:
+        - speech_voice_recognition
+        - sentiment_detection
+        - recommendation_engine
+        - text_analytics_nlp
+        - pattern_anomaly_detection
+        - automatic_decision_management
+        - natural_language_generation
+        - object_detection
+        - biometrics
+    Touchpoint:
+      type: string
+      description: Declared regulated touchpoints that trigger the conduct gate
+      enum:
+        - rating_factor
+        - renewal_price
+        - underwriting_acceptance
+        - claims_decision
+        - fraud_referral
+        - reserving_input
+        - marketing_targeting
+        - none
+    NeedStatement:
+      type: object
+      required: [audience, needCategory, statement]
+      properties:
+        audience:
+          type: string
+          enum: [internal_customer, external_customer]
+        needCategory:
+          type: string
+          enum: [product, communication, operations, cost, convenience, resources]
+        statement:
+          type: string
+          description: The z term of the formula, stated as a need not a solution
+    FunctionalitySpec:
+      type: object
+      required: [functionality, description]
+      properties:
+        functionality:
+          $ref: "#/components/schemas/Functionality"
+        description:
+          type: string
+        modelFamilies:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelFamily"
+        humanReviewRequired:
+          type: boolean
+    DataDependency:
+      type: object
+      required: [id, dataType, name]
+      properties:
+        id:
+          type: string
+        dataType:
+          $ref: "#/components/schemas/DataType"
+        name:
+          type: string
+          example: Motor telematics behavioural feed
+        structured:
+          type: boolean
+        permissionBasis:
+          type: string
+          enum: [contractual, consent, legitimate_interest, licensed, public_domain, not_established]
+        onwardTransferTerms:
+          type: string
+        permissionRenewalDate:
+          type: string
+          format: date
+        expectedBookCoverage:
+          type: number
+          format: float
+          description: Share of the in-force book realistically covered
+        ownerId:
+          type: string
+    Formula:
+      type: object
+      required: [functionalitySpec, dataDependencies, need]
+      properties:
+        functionalitySpec:
+          $ref: "#/components/schemas/FunctionalitySpec"
+        dataDependencies:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/DataDependency"
+        need:
+          $ref: "#/components/schemas/NeedStatement"
+        statement:
+          type: string
+          description: Rendered formula sentence for communication
+    UseCaseCandidate:
+      type: object
+      required: [id, title, stage, sponsorId, formula]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sponsorId:
+          type: string
+        valueChainStep:
+          $ref: "#/components/schemas/ValueChainStep"
+        stage:
+          $ref: "#/components/schemas/CandidateStage"
+        formula:
+          $ref: "#/components/schemas/Formula"
+        valuePosition:
+          $ref: "#/components/schemas/ValuePosition"
+        touchpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+        extendsExistingAutomation:
+          type: boolean
+        baselineReference:
+          type: string
+          description: Existing straight-through baseline the increment sits above
+        analogueCaseIds:
+          type: array
+          items:
+            type: string
+        submittedAt:
+          type: string
+          format: date-time
+        killDecisionDate:
+          type: string
+          format: date
+    UseCaseCandidateCreate:
+      type: object
+      required: [title, sponsorId, formula]
+      properties:
+        title:
+          type: string
+        sponsorId:
+          type: string
+        valueChainStep:
+          $ref: "#/components/schemas/ValueChainStep"
+        formula:
+          $ref: "#/components/schemas/Formula"
+        touchpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+        extendsExistingAutomation:
+          type: boolean
+        baselineReference:
+          type: string
+        analogueCaseIds:
+          type: array
+          items:
+            type: string
+    ValuePosition:
+      type: object
+      required: [resultType, impactType, quadrant]
+      properties:
+        resultType:
+          type: string
+          enum: [known, unknown]
+        impactType:
+          type: string
+          enum: [bottom_line, top_line]
+        quadrant:
+          $ref: "#/components/schemas/ValueQuadrant"
+        rationale:
+          type: string
+        assignedBy:
+          type: string
+    ValuePositionCreate:
+      type: object
+      required: [resultType, impactType]
+      properties:
+        resultType:
+          type: string
+          enum: [known, unknown]
+        impactType:
+          type: string
+          enum: [bottom_line, top_line]
+        rationale:
+          type: string
+    DataReadinessVerdict:
+      type: object
+      required: [id, candidateId, verdict, ownerId]
+      properties:
+        id:
+          type: string
+        candidateId:
+          type: string
+        verdict:
+          type: string
+          enum: [ready, ready_with_conditions, not_ready]
+        ownerId:
+          type: string
+        dependencyAssessments:
+          type: array
+          items:
+            type: object
+            properties:
+              dataDependencyId:
+                type: string
+              available:
+                type: boolean
+              qualitySufficient:
+                type: boolean
+              permissionEstablished:
+                type: boolean
+              measuredBookCoverage:
+                type: number
+                format: float
+              notes:
+                type: string
+        blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataBlocker"
+        assessedAt:
+          type: string
+          format: date-time
+    DataReadinessVerdictCreate:
+      type: object
+      required: [verdict, ownerId, dependencyAssessments]
+      properties:
+        verdict:
+          type: string
+          enum: [ready, ready_with_conditions, not_ready]
+        ownerId:
+          type: string
+        dependencyAssessments:
+          type: array
+          items:
+            type: object
+            properties:
+              dataDependencyId:
+                type: string
+              available:
+                type: boolean
+              qualitySufficient:
+                type: boolean
+              permissionEstablished:
+                type: boolean
+              measuredBookCoverage:
+                type: number
+                format: float
+              notes:
+                type: string
+    DataBlocker:
+      type: object
+      required: [blockerType, dataDependencyId]
+      properties:
+        blockerType:
+          type: string
+          enum:
+            - not_available
+            - quality_insufficient
+            - no_permission_basis
+            - permission_expired
+            - coverage_too_low
+            - unstructured_unusable
+            - lineage_unknown
+        dataDependencyId:
+          type: string
+        candidateIdsBlocked:
+          type: array
+          items:
+            type: string
+        remediationOwner:
+          type: string
+        raisedAt:
+          type: string
+          format: date-time
+    ConductGateReview:
+      type: object
+      required: [id, candidateId, triggeredBy, outcome]
+      properties:
+        id:
+          type: string
+        candidateId:
+          type: string
+        triggeredBy:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+        proposedFeatures:
+          type: array
+          items:
+            type: string
+        outcome:
+          type: string
+          enum: [open, approved, approved_with_conditions, withheld]
+        officerId:
+          type: string
+        actuarialReviewerId:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        rationale:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureRiskFinding"
+        decidedAt:
+          type: string
+          format: date-time
+    ConductGateReviewCreate:
+      type: object
+      required: [triggeredBy, proposedFeatures]
+      properties:
+        triggeredBy:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+        proposedFeatures:
+          type: array
+          items:
+            type: string
+        actuarialReviewerId:
+          type: string
+        humanReviewRoute:
+          type: string
+          description: How a policyholder reaches human review of the decision
+    FeatureRiskFinding:
+      type: object
+      required: [feature, riskType]
+      properties:
+        feature:
+          type: string
+          example: residential_postcode_cluster
+        riskType:
+          type: string
+          enum:
+            - proxy_for_protected_characteristic
+            - price_sensitivity_signal
+            - unexplainable_to_policyholder
+            - provenance_unverifiable
+            - not_permitted_in_rating
+        severity:
+          type: string
+          enum: [low, medium, high, blocking]
+        mitigation:
+          type: string
+        raisedBy:
+          type: string
+    FeatureRiskFindingCreate:
+      type: object
+      required: [feature, riskType, severity]
+      properties:
+        feature:
+          type: string
+        riskType:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, blocking]
+        mitigation:
+          type: string
+    KillCriterion:
+      type: object
+      required: [description, measure]
+      properties:
+        description:
+          type: string
+        measure:
+          type: string
+          example: model precision below 0.6 on holdout claims population
+        threshold:
+          type: number
+          format: float
+        met:
+          type: boolean
+    InvestmentDecision:
+      type: object
+      required: [id, candidateId, decision, approvedAmount]
+      properties:
+        id:
+          type: string
+        candidateId:
+          type: string
+        decision:
+          type: string
+          enum: [approved, deferred, rejected]
+        approvedAmount:
+          $ref: "#/components/schemas/Money"
+        firstReleaseScope:
+          type: string
+        firstReleaseWithinSmallStartLimit:
+          type: boolean
+        expectedBenefit:
+          $ref: "#/components/schemas/BenefitClaim"
+        killCriteria:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/KillCriterion"
+        killDecisionDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+    InvestmentDecisionCreate:
+      type: object
+      required: [decision, approvedAmount, killCriteria, killDecisionDate]
+      properties:
+        decision:
+          type: string
+          enum: [approved, deferred, rejected]
+        approvedAmount:
+          $ref: "#/components/schemas/Money"
+        firstReleaseScope:
+          type: string
+        expectedBenefit:
+          $ref: "#/components/schemas/BenefitClaimCreate"
+        killCriteria:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/KillCriterion"
+        killDecisionDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+    ModelRegistration:
+      type: object
+      required: [id, name, modelFamily, ownerId]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        modelFamily:
+          $ref: "#/components/schemas/ModelFamily"
+        ownerId:
+          type: string
+        candidateIds:
+          type: array
+          items:
+            type: string
+        dataDependencyIds:
+          type: array
+          items:
+            type: string
+        conductGateReviewId:
+          type: string
+        touchpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+        inOwnRiskAndSolvencyScope:
+          type: boolean
+        registeredAt:
+          type: string
+          format: date-time
+    ModelRegistrationCreate:
+      type: object
+      required: [name, modelFamily, ownerId]
+      properties:
+        name:
+          type: string
+        modelFamily:
+          $ref: "#/components/schemas/ModelFamily"
+        ownerId:
+          type: string
+        candidateIds:
+          type: array
+          items:
+            type: string
+        dataDependencyIds:
+          type: array
+          items:
+            type: string
+        conductGateReviewId:
+          type: string
+        touchpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Touchpoint"
+    BenefitClaim:
+      type: object
+      required: [candidateId, benefitKind]
+      properties:
+        id:
+          type: string
+        candidateId:
+          type: string
+        benefitKind:
+          type: string
+          enum:
+            - loss_ratio_points
+            - expense_ratio_points
+            - premium_growth
+            - retention_improvement
+            - avoided_cost
+        magnitude:
+          type: number
+          format: float
+        monetaryEquivalent:
+          $ref: "#/components/schemas/Money"
+        lineOfBusiness:
+          type: string
+        baselineIsolated:
+          type: boolean
+          description: True where increment above existing automation is isolated
+        baselineDescription:
+          type: string
+        period:
+          type: string
+        claimedBy:
+          type: string
+    BenefitClaimCreate:
+      type: object
+      required: [benefitKind, magnitude, period]
+      properties:
+        benefitKind:
+          type: string
+          enum:
+            - loss_ratio_points
+            - expense_ratio_points
+            - premium_growth
+            - retention_improvement
+            - avoided_cost
+        magnitude:
+          type: number
+          format: float
+        monetaryEquivalent:
+          $ref: "#/components/schemas/Money"
+        lineOfBusiness:
+          type: string
+        baselineIsolated:
+          type: boolean
+        baselineDescription:
+          type: string
+        period:
+          type: string
+    BenefitClose:
+      type: object
+      required: [claimId, financeOutcome]
+      properties:
+        claimId:
+          type: string
+        financeOutcome:
+          type: string
+          enum: [confirmed, partially_confirmed, denied, not_yet_observable]
+        confirmedMagnitude:
+          type: number
+          format: float
+        confirmedMonetary:
+          $ref: "#/components/schemas/Money"
+        ledgerReference:
+          type: string
+        confirmedBy:
+          type: string
+        variance:
+          type: number
+          format: float
+        closedAt:
+          type: string
+          format: date-time
+    BenefitCloseCreate:
+      type: object
+      required: [financeOutcome, confirmedBy]
+      properties:
+        financeOutcome:
+          type: string
+          enum: [confirmed, partially_confirmed, denied, not_yet_observable]
+        confirmedMagnitude:
+          type: number
+          format: float
+        confirmedMonetary:
+          $ref: "#/components/schemas/Money"
+        ledgerReference:
+          type: string
+        confirmedBy:
+          type: string
+    PortfolioBalance:
+      type: object
+      properties:
+        period:
+          type: string
+        committedByQuadrant:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Money"
+        discoveryShare:
+          type: number
+          format: float
+        discoveryShareTarget:
+          type: number
+          format: float
+        withinTarget:
+          type: boolean
+        liveUseCases:
+          type: integer
+        killedUseCases:
+          type: integer
+    CommitteePack:
+      type: object
+      properties:
+        period:
+          type: string
+        balance:
+          $ref: "#/components/schemas/PortfolioBalance"
+        forecastBenefit:
+          $ref: "#/components/schemas/Money"
+        bookedBenefit:
+          $ref: "#/components/schemas/Money"
+        bookedToForecastRatio:
+          type: number
+          format: float
+        killLog:
+          type: array
+          items:
+            type: object
+            properties:
+              candidateId:
+                type: string
+              title:
+                type: string
+              metCriteria:
+                type: array
+                items:
+                  type: string
+              killedAt:
+                type: string
+                format: date-time
+        topDataBlockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataBlocker"
+        gateWithholdings:
+          type: integer
+        unownedProductionModels:
+          type: integer
+    AnalogueCase:
+      type: object
+      required: [id, sourceOrganisation, sourceIndustry, transferAssumption]
+      properties:
+        id:
+          type: string
+        sourceOrganisation:
+          type: string
+        sourceIndustry:
+          type: string
+        reportedResult:
+          type: string
+          example: maintenance lead times shortened by 90 percent
+        underlyingFormula:
+          type: string
+        transferAssumption:
+          type: string
+          description: What must be true for this result to transfer to insurance
+        insuranceTranslation:
+          type: string
+        recordedBy:
+          type: string
+    AnalogueCaseCreate:
+      type: object
+      required: [sourceOrganisation, sourceIndustry, transferAssumption]
+      properties:
+        sourceOrganisation:
+          type: string
+        sourceIndustry:
+          type: string
+        reportedResult:
+          type: string
+        underlyingFormula:
+          type: string
+        transferAssumption:
+          type: string
+        insuranceTranslation:
+          type: string
+    DataEnvelopeUseCaseCandidate:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/UseCaseCandidate"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeValuePosition:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ValuePosition"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeDataReadinessVerdict:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/DataReadinessVerdict"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeConductGateReview:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ConductGateReview"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeFeatureRiskFinding:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/FeatureRiskFinding"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeInvestmentDecision:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/InvestmentDecision"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeModelRegistration:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ModelRegistration"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeBenefitClaim:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/BenefitClaim"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeBenefitClose:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/BenefitClose"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopePortfolioBalance:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/PortfolioBalance"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeCommitteePack:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/CommitteePack"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    DataEnvelopeAnalogueCase:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/AnalogueCase"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeUseCaseCandidate:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/UseCaseCandidate"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeDataBlocker:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/DataBlocker"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeDataDependency:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/DataDependency"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeModelRegistration:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ModelRegistration"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeAnalogueCase:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AnalogueCase"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"

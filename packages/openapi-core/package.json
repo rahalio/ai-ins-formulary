@@ -1,0 +1,18 @@
+{
+  "name": "@formulary/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Formulary (common + identity + pipeline domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle candidates --output src/.bundled/candidates.openapi.yaml && redocly bundle candidates --output src/.bundled/candidates.json && redocly bundle readiness --output src/.bundled/readiness.openapi.yaml && redocly bundle readiness --output src/.bundled/readiness.json && redocly bundle gates --output src/.bundled/gates.openapi.yaml && redocly bundle gates --output src/.bundled/gates.json && redocly bundle investment --output src/.bundled/investment.openapi.yaml && redocly bundle investment --output src/.bundled/investment.json && redocly bundle registry --output src/.bundled/registry.openapi.yaml && redocly bundle registry --output src/.bundled/registry.json && redocly bundle benefits --output src/.bundled/benefits.openapi.yaml && redocly bundle benefits --output src/.bundled/benefits.json && redocly bundle portfolio --output src/.bundled/portfolio.openapi.yaml && redocly bundle portfolio --output src/.bundled/portfolio.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

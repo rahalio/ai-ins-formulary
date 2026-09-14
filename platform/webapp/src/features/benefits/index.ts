@@ -1,0 +1,12 @@
+/**
+ * Benefits Feature
+ *
+ * Barrel export for benefits feature layer.
+ * Includes components and views.
+ */
+
+// Components
+export * from "./components";
+
+// Views
+export * from "./views";

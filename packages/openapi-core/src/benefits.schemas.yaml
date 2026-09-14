@@ -1,0 +1,138 @@
+openapi: 3.1.0
+info:
+  title: Benefits schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ClaimId:
+      type: string
+      pattern: '^ben_[0-9A-HJKMNP-TV-Z]{26}$'
+    BenefitClaim:
+      type: object
+      required: [candidateId, benefitKind]
+      properties:
+        id:
+          $ref: '#/components/schemas/ClaimId'
+        candidateId:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        benefitKind:
+          type: string
+          enum:
+            - loss_ratio_points
+            - expense_ratio_points
+            - premium_growth
+            - retention_improvement
+            - avoided_cost
+        magnitude:
+          type: number
+          format: float
+        monetaryEquivalent:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        lineOfBusiness:
+          type: string
+        baselineIsolated:
+          type: boolean
+          description: True where increment above existing automation is isolated
+        baselineDescription:
+          type: string
+        period:
+          type: string
+        claimedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    BenefitClaimCreate:
+      type: object
+      required: [candidateId, benefitKind, magnitude, period]
+      properties:
+        candidateId:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        benefitKind:
+          type: string
+          enum:
+            - loss_ratio_points
+            - expense_ratio_points
+            - premium_growth
+            - retention_improvement
+            - avoided_cost
+        magnitude:
+          type: number
+          format: float
+        monetaryEquivalent:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        lineOfBusiness:
+          type: string
+        baselineIsolated:
+          type: boolean
+        baselineDescription:
+          type: string
+        period:
+          type: string
+    BenefitClose:
+      type: object
+      required: [claimId, financeOutcome]
+      properties:
+        claimId:
+          $ref: '#/components/schemas/ClaimId'
+        financeOutcome:
+          type: string
+          enum: [confirmed, partially_confirmed, denied, not_yet_observable]
+        confirmedMagnitude:
+          type: number
+          format: float
+        confirmedMonetary:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        ledgerReference:
+          type: string
+        confirmedBy:
+          type: string
+        variance:
+          type: number
+          format: float
+        closedAt:
+          type: string
+          format: date-time
+    BenefitCloseCreate:
+      type: object
+      required: [financeOutcome, confirmedBy]
+      properties:
+        financeOutcome:
+          type: string
+          enum: [confirmed, partially_confirmed, denied, not_yet_observable]
+        confirmedMagnitude:
+          type: number
+          format: float
+        confirmedMonetary:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        ledgerReference:
+          type: string
+        confirmedBy:
+          type: string
+    BenefitClaimResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BenefitClaim'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    BenefitCloseResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BenefitClose'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+  parameters:
+    ClaimId:
+      name: claimId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ClaimId'

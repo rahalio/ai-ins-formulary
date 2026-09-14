@@ -1,0 +1,118 @@
+openapi: 3.1.0
+info:
+  title: Readiness schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DataBlocker:
+      type: object
+      required: [blockerType, dataDependencyId]
+      properties:
+        blockerType:
+          type: string
+          enum:
+            - not_available
+            - quality_insufficient
+            - no_permission_basis
+            - permission_expired
+            - coverage_too_low
+            - unstructured_unusable
+            - lineage_unknown
+        dataDependencyId:
+          type: string
+        candidateIdsBlocked:
+          type: array
+          items:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        remediationOwner:
+          type: string
+        raisedAt:
+          type: string
+          format: date-time
+    DependencyAssessment:
+      type: object
+      properties:
+        dataDependencyId:
+          type: string
+        available:
+          type: boolean
+        qualitySufficient:
+          type: boolean
+        permissionEstablished:
+          type: boolean
+        measuredBookCoverage:
+          type: number
+          format: float
+        notes:
+          type: string
+    DataReadinessVerdict:
+      type: object
+      required: [id, candidateId, verdict, ownerId]
+      properties:
+        id:
+          type: string
+          pattern: '^rdy_[0-9A-HJKMNP-TV-Z]{26}$'
+        candidateId:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+        verdict:
+          type: string
+          enum: [ready, ready_with_conditions, not_ready]
+        ownerId:
+          type: string
+        dependencyAssessments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DependencyAssessment'
+        blockers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataBlocker'
+        assessedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DataReadinessVerdictCreate:
+      type: object
+      required: [verdict, ownerId, dependencyAssessments]
+      properties:
+        verdict:
+          type: string
+          enum: [ready, ready_with_conditions, not_ready]
+        ownerId:
+          type: string
+        dependencyAssessments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DependencyAssessment'
+    DataReadinessVerdictResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DataReadinessVerdict'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    DataBlockerListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataBlocker'
+        nextCursor:
+          type: string
+    DataBlockerListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DataBlockerListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

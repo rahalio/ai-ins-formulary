@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: Portfolio schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    PortfolioBalance:
+      type: object
+      properties:
+        period:
+          type: string
+        committedByQuadrant:
+          type: object
+          additionalProperties:
+            $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        discoveryShare:
+          type: number
+          format: float
+        discoveryShareTarget:
+          type: number
+          format: float
+        withinTarget:
+          type: boolean
+        liveUseCases:
+          type: integer
+        killedUseCases:
+          type: integer
+    CommitteePack:
+      type: object
+      properties:
+        period:
+          type: string
+        balance:
+          $ref: '#/components/schemas/PortfolioBalance'
+        forecastBenefit:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        bookedBenefit:
+          $ref: ./common/formulary-primitives.yaml#/components/schemas/Money
+        bookedToForecastRatio:
+          type: number
+          format: float
+        killLog:
+          type: array
+          items:
+            type: object
+            properties:
+              candidateId:
+                $ref: ./common/formulary-primitives.yaml#/components/schemas/CandidateId
+              title:
+                type: string
+              metCriteria:
+                type: array
+                items:
+                  type: string
+              killedAt:
+                type: string
+                format: date-time
+        topDataBlockers:
+          type: array
+          items:
+            $ref: ./readiness.schemas.yaml#/components/schemas/DataBlocker
+        gateWithholdings:
+          type: integer
+        unownedProductionModels:
+          type: integer
+    AnalogueCase:
+      type: object
+      required: [id, sourceOrganisation, sourceIndustry, transferAssumption]
+      properties:
+        id:
+          type: string
+          pattern: '^ptf_[0-9A-HJKMNP-TV-Z]{26}$'
+        sourceOrganisation:
+          type: string
+        sourceIndustry:
+          type: string
+        reportedResult:
+          type: string
+          example: maintenance lead times shortened by 90 percent
+        underlyingFormula:
+          type: string
+        transferAssumption:
+          type: string
+          description: What must be true for this result to transfer to insurance
+        insuranceTranslation:
+          type: string
+        recordedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AnalogueCaseCreate:
+      type: object
+      required: [sourceOrganisation, sourceIndustry, transferAssumption]
+      properties:
+        sourceOrganisation:
+          type: string
+        sourceIndustry:
+          type: string
+        reportedResult:
+          type: string
+        underlyingFormula:
+          type: string
+        transferAssumption:
+          type: string
+        insuranceTranslation:
+          type: string
+    PortfolioBalanceResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PortfolioBalance'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    CommitteePackResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CommitteePack'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    AnalogueCaseListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalogueCase'
+        nextCursor:
+          type: string
+    AnalogueCaseResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalogueCase'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    AnalogueCaseListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalogueCaseListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
